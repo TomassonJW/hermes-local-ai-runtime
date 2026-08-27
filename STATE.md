@@ -26,13 +26,14 @@ The first deployment target is the existing Hermes VM with 8 vCPU, 16 GiB RAM an
 ## Gates
 
 - G-00 — Bootstrap integrity: **passed**.
-- G-01 — Hermes takeover: **passed** (this session; evidence in `operations/`).
-- UI-00 — Operations shell: **built, tested and served on the private surface — awaiting Thomas's explicit verdict**.
-- Runtime backend: blocked until Thomas explicitly accepts UI-00 and G-02 is current.
+- G-01 — Hermes takeover: **passed** (evidence in `operations/`).
+- UI-00 — Operations shell: **ACCEPTED** — explicit verdict « ACCEPTÉ » from Thomas, 2026-08-27, on the shell at commit `21cb372` served on the private surface.
+- G-02 — Read-only environment probe: next gate; must be current before any backend work starts.
+- Runtime backend: unblocked by UI-00 acceptance, still requires G-02 and then the G-03 engine spike.
 
 ## Next proof
 
-Thomas reviews `https://<private-tailnet-host>/apps/local-ai-runtime/` (route recorded locally; host redacted in public repo) and issues an explicit UI-00 verdict: ACCEPTED / TO CORRECT / REFUSED / BLOCKED. No UI-01, no backend, no package, no model download before that verdict.
+G-02 read-only probe refreshed, then G-03 engine spike: reproducible measurements of llama.cpp (+ lifecycle), LocalAI comparison and specialist workers on the target VM, ending in ADR amendments selecting the thinnest measured architecture. No permanent installation before G-03 conclusions and their gates.
 
 ## Blockers and risks
 

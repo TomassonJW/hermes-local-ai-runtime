@@ -21,9 +21,17 @@ path `/apps/local-ai-runtime` (loopback file server; restart command in
 `ui/shell/README.md`). Live VM measures 10 vCPU / ~19.5 GiB / no GPU / no swap
 device; conservative budgets unchanged; profile amendment proposed, not applied.
 
-**Hard stop reached: awaiting Thomas's explicit UI-00 verdict.** Runtime
-backend, UI-01, packages, services, model downloads and Hermes config changes
-remain forbidden until that verdict and G-02.
+**UI-00 verdict recorded: ACCEPTÉ** (Thomas, 2026-08-27, shell at `21cb372`).
+The runtime backend track is now open, gated as follows: G-02 read-only probe
+must be current, then the G-03 engine spike selects the architecture by
+measurement, then G-04 proves resource safety on the actual VM. Permanent
+installations, services and model downloads stay behind their respective gates.
+
+## Next hard stop
+
+No single hard stop of the UI-00 kind remains; the next human decisions are
+material trade-offs surfaced by the engine spike (G-03 ADR amendments) and any
+gate that touches cost, exposure, licence or product ambition.
 
 ## Mandatory takeover prompt
 
@@ -54,7 +62,3 @@ Do not install inference engines permanently, download weights, expose beyond th
 ## Key decisions
 
 Capability-first API; OpenAI facade; optional MCP; llama.cpp first candidate not lock-in; LocalAI comparison; specialist OCR/vector/audio; one heavy CPU inference; local-first fallback disabled by default; consumers own data and writes.
-
-## Next hard stop
-
-Thomas's explicit acceptance or rejection of UI-00.

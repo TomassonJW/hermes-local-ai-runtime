@@ -25,7 +25,7 @@ Only the active slice is executable. Later slices are ordered hypotheses, not co
 - [x] Build Overview, Capabilities, Models, Jobs, Evaluations, Resources, Updates and Settings with simulated states.
 - [x] Responsive desktop/mobile and keyboard verification.
 - [x] Serve privately only after tests.
-- [ ] Stop for Thomas's explicit verdict. ← **current hard stop**
+- [x] Stop for Thomas's explicit verdict — **verdict: ACCEPTÉ (2026-08-27, shell at `21cb372`)**.
 
 ## Post-acceptance — Engine spike
 
