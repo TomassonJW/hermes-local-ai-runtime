@@ -5,7 +5,7 @@ project:
   repository: TomassonJW/hermes-local-ai-runtime
   visibility: public
   version: "0.1.0"
-  status: ready_to_develop_after_baseline_anchor
+  status: ready_to_develop
 compiled:
   date: "2026-08-27"
   language:
@@ -14,7 +14,8 @@ compiled:
   compiler_role: ChatGPT product and architecture compiler
   baseline:
     anchor_file: BASELINE.md
-    commit: set_after_compilation
+    commit: 19070875f0c80e7799f394f6d4d16b481bd9be21
+    branch: baseline/v0.1.0
 authority:
   product_owner: Thomas Jankowski
   operational_owner_after_takeover: Hermes

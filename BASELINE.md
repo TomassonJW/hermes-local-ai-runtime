@@ -1,7 +1,11 @@
 # Baseline
 
-Status: pending final compilation anchor.
+Product baseline: **Hermes Local AI Runtime 0.1.0 — compiled bootstrap**.
 
-Baseline commit: `e806d5eeecf73f337c77480fea834cc051885f31`
+Baseline commit: `19070875f0c80e7799f394f6d4d16b481bd9be21`
 
-This commit initialised the repository only. The file must be updated immediately after the complete bootstrap commit. Until then, G-00 is not complete and Hermes must not start implementation.
+Baseline branch: `baseline/v0.1.0`
+
+The baseline commit contains the complete self-contained product and engineering constitution. The current `main` branch may contain later metadata, implementation, state, and handoff updates.
+
+Hermes must verify that this commit exists, run the repository validator on the current branch, then use `HANDOFF.md` and `STATE.md` for the active lot. Product amendments after this baseline are explicit Git diffs; private Notion context is not required for ordinary development sessions.
