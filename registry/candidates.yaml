@@ -1,14 +1,18 @@
 schema_version: 1
-updated_at: "2026-08-27"
+updated_at: "2026-08-28"
 notice: >
   Candidates are not installed, benchmarked, approved, or bundled. Exact
   revisions, files, hashes, and engine compatibility are installation records.
+  G-03 spike measurements: benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md.
 
 engines:
   - id: llama-cpp
-    status: candidate
+    status: benchmarked
     source: https://github.com/ggml-org/llama.cpp
     license: MIT
+    spike_evidence:
+      build: b10662
+      report: benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md
     roles:
       - text_generation
       - multimodal_generation
@@ -25,30 +29,31 @@ engines:
     required_gate: G-03
 
   - id: llama-swap
-    status: candidate
+    status: benchmarked
     source: https://github.com/mostlygeek/llama-swap
     license: MIT
+    spike_evidence:
+      build: v251
+      report: benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md
     roles:
       - process_lifecycle
       - on_demand_loading
       - idle_unload
     risks:
       - must not become the domain source of truth
-      - verify cancellation, groups, metrics, and crash recovery
+      - YAML listen ignored; loopback must be forced via CLI flag
+      - no built-in auth; must stay behind the control plane
     required_gate: G-03
 
   - id: localai
-    status: candidate
+    status: blocked
     source: https://github.com/mudler/LocalAI
     license: MIT
-    roles:
-      - alternative_execution_platform
-    rationale:
-      - broad modality and backend coverage
-      - could reduce custom implementation
-    risks:
-      - broader operational surface
-      - overlap with the intended control plane
+    block_reason: >
+      G-03 measurement on the target VM: llama-cpp backend never completed
+      loading a 0.6B Q8 GGUF within 10 minutes (two attempts) while pinned
+      llama.cpp serves the same file in under 4 s; 3.88 GB image; unwanted
+      operational scope. See ADR-0003.
     required_gate: G-03
 
   - id: paddleocr
@@ -71,7 +76,7 @@ engines:
 
 model_families:
   - id: qwen3-vl-2b-instruct-gguf
-    status: candidate
+    status: compatible
     source:
       repository: Qwen/Qwen3-VL-2B-Instruct-GGUF
       official: true
@@ -177,7 +182,7 @@ model_families:
       - resident or low-cost OCR specialist
 
   - id: qwen3-embedding-0.6b
-    status: candidate
+    status: compatible
     source:
       repository: Qwen/Qwen3-Embedding-0.6B
       official: true
@@ -192,7 +197,7 @@ model_families:
       - smaller ONNX/FastEmbed multilingual models
 
   - id: qwen3-reranker-0.6b
-    status: candidate
+    status: compatible
     source:
       repository: Qwen/Qwen3-Reranker-0.6B
       official: true
@@ -207,7 +212,7 @@ model_families:
       - compact ONNX cross-encoders
 
   - id: qwen3-0.6b
-    status: candidate
+    status: compatible
     source:
       repository: Qwen/Qwen3-0.6B
       official: true
