@@ -1,15 +1,20 @@
 # Handoff
 
-Date: 2026-08-27  
-Project: Hermes Local AI Runtime  
-Repository: `TomassonJW/hermes-local-ai-runtime`  
-Version: `0.1.0`  
-Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21`  
-Baseline branch: `baseline/v0.1.0`
+- Date: 2026-08-27 (updated by Hermes after G-01)
+- Project: Hermes Local AI Runtime
+- Repository: `TomassonJW/hermes-local-ai-runtime`
+- Version: `0.1.0`
+- Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21`
+- Baseline branch: `baseline/v0.1.0`
 
 ## Handoff status
 
-The self-contained product and engineering constitution is compiled and anchored. G-00 passes locally and in GitHub Actions. Runtime, UI, model downloads, services and integrations are not implemented.
+Hermes completed G-01: safe clone on the Hermes VM, full corpus read, validator
+and five tests pass, coverage map and redacted live profile committed. Live VM
+measures 10 vCPU / ~19.5 GiB / no GPU / no swap device — favorable versus the
+pinned 8/16 profile; conservative budgets unchanged; profile amendment proposed
+to Thomas, not applied. UI-00 is the active lot. Runtime, model downloads,
+services and integrations remain not implemented.
 
 ## Mandatory takeover prompt
 

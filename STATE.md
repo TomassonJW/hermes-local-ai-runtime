@@ -1,18 +1,20 @@
 # State
 
-Last updated: 2026-08-27
+Last updated: 2026-08-27 (Hermes takeover session)
 
 ## Phase
 
-Compiled bootstrap, ready for Hermes takeover.
+Hermes takeover complete (G-01). UI-00 in progress.
 
 ## Product status
 
 - Repository public, version `0.1.0`.
-- Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0`.
-- Bootstrap validator and five tests pass locally.
-- GitHub Actions `validate-bootstrap` run `33108026212` completed successfully on the anchored baseline branch state.
-- Implementation, installation, runtime service, model downloads, Hermes configuration changes, consumers and UI: none.
+- Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0` — verified present in clone.
+- Operational owner: Hermes (clone at the canonical productions workspace on the Hermes VM).
+- Bootstrap validator and five tests pass on this clone (pinned deps, disposable venv outside the repo).
+- Coverage map produced: `operations/COVERAGE-MAP-2026-08-27.md`.
+- Live VM profile refreshed read-only: `operations/LIVE-PROFILE-2026-08-27.md` — measured 10 vCPU / ~19.5 GiB / no GPU / no swap device; favorable vs pinned 8/16, conservative budget kept; profile update proposed, not applied.
+- Implementation, installation, runtime service, model downloads, Hermes configuration changes, consumers: none.
 - Current authority: this repository.
 
 ## Current truth
@@ -24,13 +26,13 @@ The first deployment target is the existing Hermes VM with 8 vCPU, 16 GiB RAM an
 ## Gates
 
 - G-00 — Bootstrap integrity: **passed**.
-- G-01 — Hermes takeover: **active**.
-- UI-00 — Operations shell: next visible lot after takeover.
+- G-01 — Hermes takeover: **passed** (this session; evidence in `operations/`).
+- UI-00 — Operations shell: **active**.
 - Runtime backend: blocked until Thomas explicitly accepts UI-00 and G-02 is current.
 
 ## Next proof
 
-Hermes clones or updates safely, validates the repository, produces a coverage map, refreshes a redacted read-only environment profile, updates state/handoff, and makes no system mutation.
+UI-00: truthful operations shell with simulated fixture data only, verified on desktop and mobile viewports, served on the authorised private surface, then an absolute stop for Thomas's explicit visible-product verdict.
 
 ## Blockers and risks
 

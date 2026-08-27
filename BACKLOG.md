@@ -14,10 +14,10 @@ Only the active slice is executable. Later slices are ordered hypotheses, not co
 - [x] Missions and gates.
 - [x] CI validates the baseline.
 - [x] Final SHA recorded in `BASELINE.md`.
-- [ ] Hermes verifies the baseline and current branch.
-- [ ] Hermes produces the requirement-to-file coverage map.
-- [ ] Hermes refreshes the VM profile read-only and redacted.
-- [ ] Hermes updates state/handoff without installing anything.
+- [x] Hermes verifies the baseline and current branch.
+- [x] Hermes produces the requirement-to-file coverage map.
+- [x] Hermes refreshes the VM profile read-only and redacted.
+- [x] Hermes updates state/handoff without installing anything.
 
 ## Next executable — UI-00
 
