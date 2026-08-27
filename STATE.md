@@ -27,12 +27,12 @@ The first deployment target is the existing Hermes VM with 8 vCPU, 16 GiB RAM an
 
 - G-00 — Bootstrap integrity: **passed**.
 - G-01 — Hermes takeover: **passed** (this session; evidence in `operations/`).
-- UI-00 — Operations shell: **active**.
+- UI-00 — Operations shell: **built, tested and served on the private surface — awaiting Thomas's explicit verdict**.
 - Runtime backend: blocked until Thomas explicitly accepts UI-00 and G-02 is current.
 
 ## Next proof
 
-UI-00: truthful operations shell with simulated fixture data only, verified on desktop and mobile viewports, served on the authorised private surface, then an absolute stop for Thomas's explicit visible-product verdict.
+Thomas reviews `https://<private-tailnet-host>/apps/local-ai-runtime/` (route recorded locally; host redacted in public repo) and issues an explicit UI-00 verdict: ACCEPTED / TO CORRECT / REFUSED / BLOCKED. No UI-01, no backend, no package, no model download before that verdict.
 
 ## Blockers and risks
 

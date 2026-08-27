@@ -1,0 +1,28 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+coverage
+*.tsbuildinfo
+scripts/shots/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# Secrets — never committed
+.env
+.env.*
+auth.json
+*.pem
+*.key
+*.p12
+*.pfx

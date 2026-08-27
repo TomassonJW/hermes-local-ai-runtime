@@ -21,11 +21,11 @@ Only the active slice is executable. Later slices are ordered hypotheses, not co
 
 ## Next executable — UI-00
 
-- [ ] Read pinned UI canon and local contract.
-- [ ] Build Overview, Capabilities, Models, Jobs, Evaluations, Resources, Updates and Settings with simulated states.
-- [ ] Responsive desktop/mobile and keyboard verification.
-- [ ] Serve privately only after tests.
-- [ ] Stop for Thomas's explicit verdict.
+- [x] Read pinned UI canon and local contract.
+- [x] Build Overview, Capabilities, Models, Jobs, Evaluations, Resources, Updates and Settings with simulated states.
+- [x] Responsive desktop/mobile and keyboard verification.
+- [x] Serve privately only after tests.
+- [ ] Stop for Thomas's explicit verdict. ← **current hard stop**
 
 ## Post-acceptance — Engine spike
 

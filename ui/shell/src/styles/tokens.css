@@ -1,0 +1,137 @@
+/* Design tokens — Hermes Local AI Runtime operations shell (UI-00).
+   Calm, dense, operational. No neon AI aesthetic. Status never color-only. */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eceff2;
+  --text: #1a2027;
+  --text-muted: #5a6572;
+  --border: #d7dce2;
+  --border-strong: #b9c1ca;
+  --accent: #2458c5;
+  --accent-text: #ffffff;
+  --accent-soft: rgba(36, 88, 197, 0.09);
+  --focus: #2458c5;
+
+  --ok-fg: #14682f;
+  --ok-bg: #e3f3e8;
+  --warn-fg: #8a5a05;
+  --warn-bg: #fcf2dc;
+  --danger-fg: #a92019;
+  --danger-bg: #fbe9e7;
+  --info-fg: #1d4fae;
+  --info-bg: #e7eefb;
+  --neutral-fg: #57626e;
+  --neutral-bg: #eceff2;
+
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 1px 2px rgba(16, 24, 32, 0.06);
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  /* Density (default: compact readable) */
+  --fs-body: 15px;
+  --fs-table: 14px;
+  --fs-small: 12.5px;
+  --control-h: 30px;
+  --row-h: 36px;
+  --pad-1: 6px;
+  --pad-2: 10px;
+  --pad-3: 14px;
+  --pad-4: 20px;
+  --gap: 14px;
+
+  --topbar-h: 50px;
+  --sidebar-w: 218px;
+
+  --motion-fast: 120ms;
+  --motion: 180ms;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #10141a;
+  --surface: #171d24;
+  --surface-2: #202831;
+  --text: #e5eaef;
+  --text-muted: #96a1ad;
+  --border: #2a333d;
+  --border-strong: #3c4753;
+  --accent: #7aa7f7;
+  --accent-text: #0d1117;
+  --accent-soft: rgba(122, 167, 247, 0.13);
+  --focus: #8db4ff;
+
+  --ok-fg: #6fce8d;
+  --ok-bg: rgba(38, 122, 63, 0.22);
+  --warn-fg: #e5b567;
+  --warn-bg: rgba(158, 106, 12, 0.2);
+  --danger-fg: #f0857d;
+  --danger-bg: rgba(169, 32, 25, 0.2);
+  --info-fg: #8db4ff;
+  --info-bg: rgba(52, 106, 209, 0.2);
+  --neutral-fg: #a4aeb9;
+  --neutral-bg: rgba(150, 161, 173, 0.14);
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Density profiles (identifier: density-profile/v1) */
+[data-density="dense"] {
+  --fs-body: 14px;
+  --fs-table: 13px;
+  --control-h: 26px;
+  --row-h: 30px;
+  --pad-1: 4px;
+  --pad-2: 7px;
+  --pad-3: 10px;
+  --pad-4: 14px;
+  --gap: 10px;
+}
+[data-density="comfortable"] {
+  --fs-body: 15.5px;
+  --fs-table: 14.5px;
+  --control-h: 36px;
+  --row-h: 44px;
+  --pad-2: 12px;
+  --pad-3: 18px;
+  --pad-4: 24px;
+  --gap: 18px;
+}
+[data-density="spacious"] {
+  --fs-body: 16px;
+  --fs-table: 15px;
+  --control-h: 40px;
+  --row-h: 50px;
+  --pad-2: 14px;
+  --pad-3: 22px;
+  --pad-4: 30px;
+  --gap: 22px;
+}
+
+/* Text size is independent from density */
+[data-textsize="90"] { font-size: 90%; }
+[data-textsize="100"] { font-size: 100%; }
+[data-textsize="110"] { font-size: 110%; }
+[data-textsize="120"] { font-size: 120%; }
+
+[data-contrast="high"] {
+  --border: var(--border-strong);
+  --text-muted: var(--text);
+}
+
+[data-motion="reduced"] * {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

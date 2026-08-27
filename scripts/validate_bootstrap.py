@@ -15,6 +15,15 @@ from jsonschema import Draft202012Validator
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Generated/vendored trees that exist only in local working copies (e.g. the
+# UI shell's installed dependencies). They are git-ignored and outside the
+# public corpus, so validation must not walk them.
+EXCLUDED_DIRS = {".git", "node_modules", "dist", ".venv", "__pycache__", ".pnpm-store", "shots"}
+
+
+def is_excluded(path: Path) -> bool:
+    return any(part in EXCLUDED_DIRS or part.startswith(".git") for part in path.parts)
+
 REQUIRED_FILES = {
     "README.md",
     "README.fr.md",
@@ -92,7 +101,7 @@ def validate_required_files(validation: Validation, allow_pending_baseline: bool
 
 def validate_yaml_and_json(validation: Validation) -> None:
     for path in sorted(ROOT.rglob("*")):
-        if not path.is_file() or any(part.startswith(".git") for part in path.parts):
+        if not path.is_file() or is_excluded(path):
             continue
         if path.suffix in {".yaml", ".yml"}:
             load_yaml(path, validation)
@@ -112,6 +121,8 @@ def normalise_link(raw: str) -> str:
 
 def validate_internal_links(validation: Validation) -> None:
     for path in sorted(ROOT.rglob("*.md")):
+        if is_excluded(path):
+            continue
         text = path.read_text(encoding="utf-8")
         for match in LINK_RE.finditer(text):
             target = normalise_link(match.group(1))
@@ -199,7 +210,7 @@ def validate_invariants(validation: Validation) -> None:
         for path in ROOT.rglob("*")
         if path.is_file()
         and path.suffix.lower() in {".md", ".yaml", ".yml", ".json", ".toml", ""}
-        and ".git" not in path.parts
+        and not is_excluded(path)
     )
     invariants = {
         "UI-00 stop": "UI-00",
@@ -216,7 +227,7 @@ def validate_invariants(validation: Validation) -> None:
 
 def validate_public_safety(validation: Validation) -> None:
     for path in sorted(ROOT.rglob("*")):
-        if not path.is_file() or ".git" in path.parts:
+        if not path.is_file() or is_excluded(path):
             continue
         if path.suffix.lower() in MODEL_EXTENSIONS:
             validation.error(f"Model artefact committed: {path.relative_to(ROOT)}")

@@ -9,12 +9,21 @@
 
 ## Handoff status
 
-Hermes completed G-01: safe clone on the Hermes VM, full corpus read, validator
-and five tests pass, coverage map and redacted live profile committed. Live VM
-measures 10 vCPU / ~19.5 GiB / no GPU / no swap device — favorable versus the
-pinned 8/16 profile; conservative budgets unchanged; profile amendment proposed
-to Thomas, not applied. UI-00 is the active lot. Runtime, model downloads,
-services and integrations remain not implemented.
+Hermes completed G-01 (safe clone, corpus read, validator + tests pass, coverage
+map and redacted live profile committed) and delivered UI-00: a complete
+operations shell (Overview, Capabilities, Models, Jobs, Evaluations, Resources,
+Updates, Settings + deep-linkable details) built from a versioned simulated
+fixture, tested (14 UI tests, typecheck, build), verified in a real headless
+browser on desktop and mobile viewports against the official private tailnet
+route, with zero console errors. Evidence and registry:
+`ui/UI-00-PAGE-REGISTRY.md`. Serving: static build behind the private tailnet
+path `/apps/local-ai-runtime` (loopback file server; restart command in
+`ui/shell/README.md`). Live VM measures 10 vCPU / ~19.5 GiB / no GPU / no swap
+device; conservative budgets unchanged; profile amendment proposed, not applied.
+
+**Hard stop reached: awaiting Thomas's explicit UI-00 verdict.** Runtime
+backend, UI-01, packages, services, model downloads and Hermes config changes
+remain forbidden until that verdict and G-02.
 
 ## Mandatory takeover prompt
 
