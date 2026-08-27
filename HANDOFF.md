@@ -3,11 +3,13 @@
 Date: 2026-08-27  
 Project: Hermes Local AI Runtime  
 Repository: `TomassonJW/hermes-local-ai-runtime`  
-Version: `0.1.0`
+Version: `0.1.0`  
+Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21`  
+Baseline branch: `baseline/v0.1.0`
 
 ## Handoff status
 
-Product and engineering constitution compiled. Runtime not implemented. The baseline commit is recorded in `BASELINE.md` after compilation.
+The self-contained product and engineering constitution is compiled and anchored. G-00 passes locally and in GitHub Actions. Runtime, UI, model downloads, services and integrations are not implemented.
 
 ## Mandatory takeover prompt
 
@@ -23,7 +25,13 @@ The repository authorises only safe takeover and read-only preflight. Because th
 
 ## First session
 
-Verify baseline/Git; run validator/tests; read the corpus; produce a coverage map; refresh VM profile read-only and redacted; prepare and implement only UI-00; update state/handoff; stop for Thomas.
+1. Verify baseline, branch, remote and working tree.
+2. Run `python scripts/validate_bootstrap.py` and `pytest`.
+3. Read the corpus and produce a coverage map.
+4. Refresh VM allocation/headroom/prerequisites read-only and redact the report.
+5. Update `STATE.md`, `HANDOFF.md` and active backlog.
+6. Commit and push the read-only takeover evidence.
+7. Prepare UI-00; do not install or start the AI runtime.
 
 ## Do not do
 

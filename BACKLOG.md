@@ -2,7 +2,7 @@
 
 Only the active slice is executable. Later slices are ordered hypotheses, not commitments.
 
-## Active — Bootstrap handoff
+## Active — Hermes takeover and read-only preflight
 
 - [x] Shared capability-kernel boundary.
 - [x] Actual VM profile separated from host capacity.
@@ -12,9 +12,12 @@ Only the active slice is executable. Later slices are ordered hypotheses, not co
 - [x] Capability/model candidate registry.
 - [x] Hermes integration and thin skill contract.
 - [x] Missions and gates.
-- [ ] CI validates the baseline.
-- [ ] Final SHA recorded in `BASELINE.md`.
-- [ ] Hermes performs read-only takeover.
+- [x] CI validates the baseline.
+- [x] Final SHA recorded in `BASELINE.md`.
+- [ ] Hermes verifies the baseline and current branch.
+- [ ] Hermes produces the requirement-to-file coverage map.
+- [ ] Hermes refreshes the VM profile read-only and redacted.
+- [ ] Hermes updates state/handoff without installing anything.
 
 ## Next executable — UI-00
 
