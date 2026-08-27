@@ -1,0 +1,298 @@
+openapi: 3.1.0
+info:
+  title: Hermes Local AI Runtime API
+  version: 0.1.0
+  description: Candidate contract. Native `/api/v1` is normative; `/v1` is compatibility.
+  license:
+    name: Apache-2.0
+servers:
+  - url: http://127.0.0.1:8090
+    description: Loopback default
+security:
+  - bearerAuth: []
+paths:
+  /healthz:
+    get:
+      security: []
+      operationId: getHealth
+      responses:
+        "200":
+          description: Process liveness
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /readyz:
+    get:
+      security: []
+      operationId: getReadiness
+      responses:
+        "200":
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Readiness"
+        "503":
+          description: Alive but not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Readiness"
+  /api/v1/system:
+    get:
+      operationId: describeSystem
+      responses:
+        "200":
+          description: Public-safe runtime description
+  /api/v1/capabilities:
+    get:
+      operationId: listCapabilities
+      parameters:
+        - in: query
+          name: available
+          schema: {type: boolean}
+      responses:
+        "200":
+          description: Capability catalogue
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Capability"
+  /api/v1/jobs:
+    post:
+      operationId: submitJob
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema: {type: string, minLength: 8, maxLength: 200}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/job-request.schema.json"
+      responses:
+        "200":
+          description: Synchronous result
+          content:
+            application/json:
+              schema:
+                $ref: "../schemas/job-result.schema.json"
+        "202":
+          description: Asynchronous job accepted
+          headers:
+            Location:
+              required: true
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobAccepted"
+        "400": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "413": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+        "503": {$ref: "#/components/responses/Error"}
+  /api/v1/jobs/{job_id}:
+    get:
+      operationId: getJob
+      parameters:
+        - $ref: "#/components/parameters/JobId"
+      responses:
+        "200":
+          description: Job state or result
+        "404": {$ref: "#/components/responses/Error"}
+  /api/v1/jobs/{job_id}/cancel:
+    post:
+      operationId: cancelJob
+      parameters:
+        - $ref: "#/components/parameters/JobId"
+      responses:
+        "202":
+          description: Cancellation requested
+        "404": {$ref: "#/components/responses/Error"}
+        "409": {$ref: "#/components/responses/Error"}
+  /api/v1/models:
+    get:
+      operationId: listModels
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [discovered, candidate, compatible, benchmarked, approved, deprecated, blocked]
+      responses:
+        "200":
+          description: Public-safe model registry
+  /api/v1/evaluations:
+    post:
+      operationId: runEvaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [suite, route]
+              properties:
+                suite: {type: string}
+                route: {type: string}
+                corpus_mount: {type: string}
+                publish_public_summary: {type: boolean, default: false}
+      responses:
+        "202":
+          description: Evaluation accepted
+  /v1/models:
+    get:
+      operationId: listCompatibleModels
+      responses:
+        "200":
+          description: Approved compatibility aliases
+  /v1/chat/completions:
+    post:
+      operationId: createChatCompletion
+      description: OpenAI-compatible adapter; arbitrary engine flags are rejected.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model, messages]
+              additionalProperties: true
+      responses:
+        "200":
+          description: Compatible response or event stream
+  /v1/responses:
+    post:
+      operationId: createResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model, input]
+              additionalProperties: true
+      responses:
+        "200": {description: Compatible response or event stream}
+  /v1/embeddings:
+    post:
+      operationId: createEmbeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [model, input]
+              properties:
+                model: {type: string}
+                input:
+                  oneOf:
+                    - {type: string}
+                    - {type: array, items: {type: string}}
+      responses:
+        "200": {description: Embedding response}
+  /v1/rerank:
+    post:
+      operationId: rerank
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [model, query, documents]
+              properties:
+                model: {type: string}
+                query: {type: string}
+                documents: {type: array, maxItems: 100, items: {type: string}}
+                top_n: {type: integer, minimum: 1, maximum: 100}
+      responses:
+        "200": {description: Ordered candidates}
+  /v1/audio/transcriptions:
+    post:
+      operationId: transcribeAudio
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, model]
+              properties:
+                file: {type: string, format: binary}
+                model: {type: string}
+                language: {type: string}
+      responses:
+        "200": {description: Transcription response}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer}
+  parameters:
+    JobId:
+      in: path
+      name: job_id
+      required: true
+      schema: {type: string, pattern: "^job_[A-Za-z0-9_-]+$"}
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status, version]
+      properties:
+        status: {const: ok}
+        version: {type: string}
+    Readiness:
+      type: object
+      additionalProperties: false
+      required: [ready, reasons]
+      properties:
+        ready: {type: boolean}
+        reasons: {type: array, items: {type: string}}
+    Capability:
+      type: object
+      additionalProperties: false
+      required: [id, version, profiles, available]
+      properties:
+        id: {type: string}
+        version: {type: string}
+        profiles: {type: array, items: {type: string, enum: [fast, balanced, accurate]}}
+        available: {type: boolean}
+        synchronous: {type: boolean}
+        limits: {type: object, additionalProperties: true}
+    JobAccepted:
+      type: object
+      additionalProperties: false
+      required: [job_id, status]
+      properties:
+        job_id: {type: string}
+        status: {const: queued}
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, retryable, request_id]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        retryable: {type: boolean}
+        request_id: {type: string}
+        retry_after_seconds: {type: integer, minimum: 0}
+        details: {type: object, additionalProperties: true}
+  responses:
+    Error:
+      description: Stable runtime error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

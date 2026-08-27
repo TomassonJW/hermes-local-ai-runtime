@@ -1,0 +1,33 @@
+schema_version: 1
+installation_id: local-example
+models:
+  - alias: vision-balanced@stable
+    artifact_id: sha256:replace-with-verified-artifact
+    status: approved
+    capabilities:
+      - vision.analyze@1
+      - vision.extract_structured@1
+    engine:
+      adapter: llama_cpp
+      version: replace-with-pinned-version
+    preset: vision-balanced-cpu-v1
+    license_record: qwen3-vl-apache-2.0-reviewed
+    hardware_profiles:
+      - hermes-cpu-8vcpu-16gib
+
+routes:
+  - id: vision-balanced@2026-08
+    capability: vision.analyze
+    version: "1"
+    profile: balanced
+    status: approved
+    steps:
+      - kind: general_vlm
+        worker: llama_cpp_vision
+        model_alias: vision-balanced@stable
+        preset: vision-balanced-cpu-v1
+    policy:
+      resource_class: heavy
+      cloud_fallback_allowed: false
+      data_classification_max: confidential
+      timeout_ms: 120000

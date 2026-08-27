@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hermes-local-ai-runtime/route.schema.json",
+  "title": "Capability route",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "capability", "version", "profile", "status", "steps", "policy"],
+  "properties": {
+    "id": {"type": "string"},
+    "capability": {"type": "string"},
+    "version": {"type": "string"},
+    "profile": {"type": "string", "enum": ["fast", "balanced", "accurate"]},
+    "status": {"type": "string", "enum": ["candidate", "approved", "deprecated", "blocked"]},
+    "steps": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["kind", "worker"], "properties": {"kind": {"type": "string"}, "worker": {"type": "string"}, "model_alias": {"type": "string"}, "preset": {"type": "string"}, "condition": {"type": "string"}}}},
+    "policy": {"type": "object", "required": ["resource_class", "cloud_fallback_allowed"], "properties": {"resource_class": {"type": "string", "enum": ["tiny", "light", "medium", "heavy", "exclusive"]}, "cloud_fallback_allowed": {"type": "boolean"}, "data_classification_max": {"type": "string", "enum": ["public", "internal", "confidential", "restricted"]}, "timeout_ms": {"type": "integer", "minimum": 100}}},
+    "output_validation": {"type": "object", "additionalProperties": true}
+  }
+}

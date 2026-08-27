@@ -1,0 +1,52 @@
+name: Capability request
+description: Propose a shared capability or material route change.
+title: "[capability] "
+labels: ["capability"]
+body:
+  - type: input
+    id: consumer
+    attributes:
+      label: Independent consumers
+      description: Which two or more applications could use this capability?
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the task without naming a preferred model.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Candidate input/output contract
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Existing capability or external engine alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Quality, resource, privacy, licence, and latency constraints
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Acceptance benchmark
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundaries
+      options:
+        - label: This does not require the runtime to own consumer business data.
+          required: true
+        - label: This is not only a request to add a model name.
+          required: true

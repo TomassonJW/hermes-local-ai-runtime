@@ -1,0 +1,131 @@
+schema_version: 1
+capabilities:
+  - id: text.extract_structured
+    version: "1"
+    priority: P0
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [text], requires_json_schema: true}
+    output: {type: schema_validated_json, required_metadata: [evidence, warnings, provenance, review_required]}
+  - id: text.classify
+    version: "1"
+    priority: P0
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [text], requires_labels: true}
+    output: {type: ranked_labels}
+  - id: text.embed
+    version: "1"
+    priority: P0
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [text], batch: true}
+    output: {type: vectors, required_metadata: [dimensions, normalisation, model_artifact, provenance]}
+  - id: search.rerank
+    version: "1"
+    priority: P0
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [text], query_required: true, candidates_max: 100}
+    output: {type: ranked_candidates}
+  - id: vision.analyze
+    version: "1"
+    priority: P0
+    resource_class: heavy
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image], question_required: true, max_images_candidate: 4}
+    output: {type: answer_with_evidence, required_metadata: [transformations, warnings, provenance, review_required]}
+  - id: vision.extract_structured
+    version: "1"
+    priority: P0
+    resource_class: heavy
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image], requires_json_schema: true}
+    output: {type: schema_validated_json}
+  - id: vision.classify
+    version: "1"
+    priority: P0
+    resource_class: medium
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image], requires_labels: true}
+    output: {type: ranked_labels}
+  - id: vision.detect_objects
+    version: "1"
+    priority: P1
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image]}
+    output: {type: labelled_regions}
+  - id: vision.embed
+    version: "1"
+    priority: P1
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image], batch: true}
+    output: {type: vectors}
+  - id: vision.compare
+    version: "1"
+    priority: P1
+    resource_class: medium
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image], min_items: 2}
+    output: {type: comparison}
+  - id: document.text_extract
+    version: "1"
+    priority: P0
+    resource_class: tiny
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [pdf]}
+    output: {type: pages_text_metadata}
+  - id: document.ocr
+    version: "1"
+    priority: P0
+    resource_class: medium
+    profiles: [fast, balanced, accurate]
+    sync_candidate: false
+    input: {media: [image, pdf]}
+    output: {type: pages_regions_text}
+  - id: document.parse
+    version: "1"
+    priority: P0
+    resource_class: medium
+    profiles: [fast, balanced, accurate]
+    sync_candidate: false
+    input: {media: [image, pdf]}
+    output: {type: document_layout}
+  - id: document.classify
+    version: "1"
+    priority: P0
+    resource_class: light
+    profiles: [fast, balanced, accurate]
+    sync_candidate: true
+    input: {media: [image, pdf, text], requires_labels: true}
+    output: {type: ranked_labels}
+  - id: document.extract_structured
+    version: "1"
+    priority: P0
+    resource_class: heavy
+    profiles: [fast, balanced, accurate]
+    sync_candidate: false
+    input: {media: [image, pdf], requires_json_schema: true}
+    output: {type: schema_validated_json}
+  - id: audio.transcribe
+    version: "1"
+    priority: P1
+    resource_class: heavy
+    profiles: [fast, balanced, accurate]
+    sync_candidate: false
+    input: {media: [audio]}
+    output: {type: transcript_segments}
+future_disabled: [text.generate, audio.transcribe_stream, audio.synthesise, image.generate, image.edit, video.generate, agent.execute]

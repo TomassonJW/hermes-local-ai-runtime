@@ -1,0 +1,90 @@
+runtime:
+  instance_name: hermes-local-ai-runtime
+  environment: development
+  bind_host: 127.0.0.1
+  bind_port: 8090
+  public_access: false
+  hardware_profile: hermes-cpu-8vcpu-16gib
+  log_payloads: false
+  metadata_retention_days: 14
+  state_path: ./state
+  cache_path: ./cache
+  model_store_path: ./model-store
+
+api:
+  native_versions: ["v1"]
+  openai_compatibility:
+    enabled: true
+    endpoints:
+      - chat_completions
+      - responses
+      - embeddings
+      - rerank
+      - audio_transcriptions
+  mcp:
+    enabled: false
+  request_limits:
+    max_json_bytes: 1048576
+    max_upload_bytes: 52428800
+    max_image_pixels: 25000000
+    max_pdf_pages: 100
+    max_audio_seconds: 7200
+
+security:
+  loopback_without_auth: true
+  non_loopback_requires_auth: true
+  allow_remote_urls: false
+  cloud_fallback_default: false
+  payload_debug_capture: false
+  secrets_provider: environment_or_file
+
+scheduler:
+  queue_max_jobs: 8
+  interactive_reserved_slots: 1
+  heavy_concurrency: 1
+  light_concurrency: 2
+  default_timeout_ms: 120000
+  shutdown_grace_seconds: 30
+
+resources:
+  soft_memory_gib: 8
+  hard_memory_gib: 10
+  normal_cpu_cores: 4
+  burst_cpu_cores: 6
+  sustained_swap_growth_allowed: false
+  pressure_poll_seconds: 2
+  unload_on_memory_pressure: true
+
+models:
+  registry_files:
+    - ./registry/candidates.yaml
+    - ./config/model-registry.local.yaml
+  auto_download: false
+  auto_promote: false
+  verify_hashes: true
+  require_license_review: true
+
+workers:
+  llama_cpp:
+    enabled: false
+    lifecycle_adapter: llama-swap
+  document_native:
+    enabled: false
+  paddleocr:
+    enabled: false
+  onnx:
+    enabled: false
+  whisper_cpp:
+    enabled: false
+
+routes:
+  config_path: ./config/routes.local.yaml
+  allow_candidate_routes_for_operators: true
+  default_profile: balanced
+  degraded_routes_default: false
+
+observability:
+  metrics_enabled: true
+  metrics_path: /metrics
+  traces_enabled: false
+  support_bundle_payloads: false

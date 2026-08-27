@@ -1,0 +1,17 @@
+# Conceptual template: verify exact keys against the installed Hermes version.
+# Store credentials outside Git.
+auxiliary:
+  vision:
+    provider: openai
+    model: hlair/vision-balanced
+    base_url: http://127.0.0.1:8090/v1
+    api_key_env: HLAIR_API_KEY
+    timeout_seconds: 120
+
+# Expected flow:
+# image + actual user question
+#   -> Hermes Local AI Runtime OpenAI-compatible vision route
+#   -> task-specific answer with uncertainty
+#   -> text-only Hermes main model
+#
+# Do not configure a remote fallback here by default.

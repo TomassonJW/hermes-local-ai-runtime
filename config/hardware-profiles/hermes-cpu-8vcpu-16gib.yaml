@@ -1,0 +1,50 @@
+id: hermes-cpu-8vcpu-16gib
+status: candidate
+source_date: "2026-07-09"
+description: >
+  Existing Hermes Ubuntu VM. Values are allocation inside the VM, not total
+  Proxmox host capacity. Refresh read-only before implementation.
+hardware:
+  architecture: x86_64
+  cpu:
+    vendor: AMD
+    host_family: Ryzen 9 7900
+    allocated_vcpu: 8
+    instruction_probe_required: true
+  memory:
+    allocated_gib: 16
+  accelerator:
+    type: none
+  storage:
+    model_store_quota_gib: 40
+    temporary_work_quota_gib: 10
+operating_system:
+  distribution: Ubuntu
+  version: "24.04"
+resource_policy:
+  normal_cpu_cores: 4
+  burst_cpu_cores: 6
+  soft_memory_gib: 8
+  hard_memory_gib: 10
+  heavy_concurrency: 1
+  light_concurrency: 2
+  queue_max_jobs: 8
+  sustained_swap_growth_allowed: false
+residency_candidates:
+  native_extractors: resident
+  tiny_ocr: resident_if_measured
+  compact_embeddings: resident_if_measured
+  reranker_idle_ttl_seconds: 1800
+  text_model_idle_ttl_seconds: 900
+  vision_model_idle_ttl_seconds: 300
+  speech_model_idle_ttl_seconds: 600
+route_bounds:
+  classification_context_tokens: 4096
+  structured_text_context_tokens: 4096
+  vision_context_tokens: 8192
+  dense_document_context_tokens: 16384
+  heavy_model_parameter_class_max: "2B candidate, benchmark required"
+notes:
+  - Other Hermes applications share the VM.
+  - No permanent model or service activation is authorised before gates.
+  - Host CPU thread count and host RAM must not be used as VM admission values.

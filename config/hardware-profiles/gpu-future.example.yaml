@@ -1,0 +1,33 @@
+id: gpu-future-example
+status: disabled
+description: Template only. Do not activate until exact hardware is installed and measured.
+hardware:
+  architecture: x86_64
+  cpu:
+    allocated_vcpu: null
+  memory:
+    allocated_gib: null
+  accelerator:
+    type: gpu
+    vendor: null
+    model: null
+    vram_gib: null
+    driver_version: null
+    runtime_backend: null
+resource_policy:
+  normal_cpu_cores: null
+  burst_cpu_cores: null
+  soft_memory_gib: null
+  hard_memory_gib: null
+  heavy_concurrency: null
+placement:
+  local_to_control_plane: true
+  trust_domain: local
+  data_classification_max: confidential
+required_before_activation:
+  - hardware inventory
+  - driver and backend compatibility
+  - power and cooling review
+  - passthrough or isolation plan
+  - benchmark on target capabilities
+  - rollback

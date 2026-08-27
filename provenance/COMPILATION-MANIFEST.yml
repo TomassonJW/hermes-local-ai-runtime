@@ -1,0 +1,141 @@
+manifest_version: "1.0"
+context_id: CTX-HERMES-LOCAL-AI-RUNTIME
+project:
+  name: Hermes Local AI Runtime
+  repository: TomassonJW/hermes-local-ai-runtime
+  visibility: public
+  version: "0.1.0"
+  status: ready_to_develop_after_baseline_anchor
+compiled:
+  date: "2026-08-27"
+  language:
+    canonical: English
+    overview_translation: French
+  compiler_role: ChatGPT product and architecture compiler
+  baseline:
+    anchor_file: BASELINE.md
+    commit: set_after_compilation
+authority:
+  product_owner: Thomas Jankowski
+  operational_owner_after_takeover: Hermes
+  repository_is_self_contained: true
+canons:
+  agentic_development:
+    repository: TomassonJW/agentic-development-canon
+    version: "0.5.0"
+    commit: 460d3ef07b740c12f82baa89a0614efe8fe4ccbb
+    runtime_dependency: false
+  canonical_ui:
+    repository: TomassonJW/canonical-ui-design
+    version: "1.3.0"
+    commit: 4d720bf20f3c89e9a9d71072f0b76d55d225cb62
+    runtime_dependency: false
+    local_contract: ui/LOCAL-UI-CONTRACT.md
+source_classes:
+  - id: decision-2026-08-27
+    type: explicit_product_decisions
+    visibility: private_source_distilled_publicly
+    used_for:
+      - product_name
+      - public_repository
+      - shared_kernel_scope
+      - cpu_first
+      - future_gpu
+      - general_capability_inventory
+      - operations_ui
+  - id: server-inventory-2026-07-09
+    type: private_operational_inventory
+    visibility: redacted_distillation
+    used_for:
+      - 8_vcpu_vm
+      - 16_gib_vm_ram
+      - ryzen_9_7900_host_family
+      - ubuntu_24_04
+      - no_gpu
+  - id: sillage-handoff-2026-08-27
+    type: private_consumer_repository
+    visibility: boundary_only
+    used_for:
+      - shared_runtime_not_sillage_feature
+      - deterministic_first_ai_second_pass
+      - consumer_owns_business_writes
+  - id: official-primary-research
+    type: public_official_documentation
+    visibility: public
+    used_for:
+      - hermes_integration_surfaces
+      - engine_candidates
+      - model_candidates
+      - skill_format
+files:
+  product:
+    - product/00-index.md
+    - product/01-vision-and-positioning.md
+    - product/02-users-and-use-cases.md
+    - product/03-capability-map.md
+    - product/04-scope-and-non-goals.md
+    - product/05-success-metrics.md
+    - product/06-risk-register.md
+    - product/07-quality-and-fallback-policy.md
+  architecture:
+    - architecture/00-index.md
+    - architecture/01-system-context.md
+    - architecture/02-control-plane-and-workers.md
+    - architecture/03-resource-governance.md
+    - architecture/04-security-and-data-boundaries.md
+    - architecture/05-deployment-profiles.md
+    - architecture/06-model-lifecycle.md
+    - architecture/07-hermes-integration.md
+    - architecture/08-api-and-job-model.md
+    - architecture/09-future-gpu-and-distributed-workers.md
+    - architecture/10-observability-and-provenance.md
+  execution:
+    - GATES.md
+    - ROADMAP.md
+    - BACKLOG.md
+    - STATE.md
+    - HANDOFF.md
+    - missions/
+  contracts:
+    - contracts/openapi.yaml
+    - contracts/capabilities.v1.yaml
+    - schemas/
+  operations:
+    - operations/
+    - registry/
+    - benchmarks/
+  integration:
+    - integration/hermes/
+    - integration/sillage/
+  ui:
+    - ui/LOCAL-UI-CONTRACT.md
+    - ui/UI-00-ACCEPTANCE.md
+redactions:
+  - private Notion page URLs and IDs
+  - private repository file contents not needed for autonomy
+  - server IPs, private domains, credentials, and exact private paths
+  - personal documents and benchmark corpus names
+  - Sillage business data
+  - Hermes profile, memory, sessions, providers, and auth
+omissions:
+  - final implementation framework pending engine spike
+  - exact service/container packaging pending G-03
+  - exact metadata database pending implementation ADR
+  - GPU vendor and placement pending hardware decision
+  - public synthetic fixtures pending implementation mission
+  - model artefact hashes pending authorised downloads
+  - live Hermes config keys pending version compatibility test
+gates:
+  bootstrap: G-00
+  first_takeover: G-01
+  first_visible: UI-00
+  backend_start_requires:
+    - UI-00_explicit_acceptance
+    - G-02
+readiness:
+  repository_understandable_without_notion: true
+  no_secret_required: true
+  first_lot_bounded: true
+  ui_stop_defined: true
+  implementation_authorised: false
+  takeover_and_read_only_preflight_authorised: true

@@ -1,0 +1,64 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+secrets/
+private/
+auth.json
+*.key
+*.pem
+*.p12
+
+# Models, datasets, caches and generated artefacts
+models/
+model-store/
+datasets/private/
+benchmarks/results/private/
+cache/
+artifacts/
+downloads/
+*.gguf
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.bin
+
+# Runtime state and logs
+data/
+state/
+logs/
+*.log
+*.db
+*.sqlite
+*.sqlite3
+.pid
+run/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# JavaScript / UI
+node_modules/
+.next/
+.vite/
+coverage/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local benchmark reports
+benchmarks/results/*
+!benchmarks/results/.gitkeep

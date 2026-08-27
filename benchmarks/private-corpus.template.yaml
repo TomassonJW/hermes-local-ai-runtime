@@ -1,0 +1,33 @@
+schema_version: 1
+corpus_id: replace-private-corpus-id
+version: "1"
+visibility: private-mounted
+mount_alias: private-eval
+public_path: null
+owner: replace-owner
+data_classes:
+  - confidential
+purposes:
+  - document_ocr
+  - structured_extraction
+  - vision_questions
+retention:
+  source_files: consumer_owned
+  runtime_payload_cache: none
+  detailed_results: local_only
+  public_summary: aggregate_only
+splits:
+  tuning:
+    manifest: local/path/not/committed
+  validation:
+    manifest: local/path/not/committed
+  holdout:
+    manifest: local/path/not/committed
+annotations:
+  format: replace-format
+  contains_personal_data: true
+  anonymisation_claim: false
+release_prohibited: true
+notes:
+  - Never commit local paths or filenames that reveal private entities.
+  - The public repository receives only synthetic fixtures and aggregate metrics.

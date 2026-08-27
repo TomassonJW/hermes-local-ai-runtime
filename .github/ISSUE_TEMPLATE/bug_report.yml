@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible runtime, contract, or operations defect.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not attach secrets, private documents, audio, screenshots, or payload logs.
+  - type: input
+    id: version
+    attributes:
+      label: Runtime version or commit
+    validations:
+      required: true
+  - type: input
+    id: profile
+    attributes:
+      label: Hardware profile
+      placeholder: hermes-cpu-8vcpu-16gib or public-safe equivalent
+    validations:
+      required: true
+  - type: input
+    id: capability
+    attributes:
+      label: Capability and profile
+      placeholder: vision.analyze@1 / balanced
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Synthetic reproduction
+      description: Use synthetic or public-safe input only.
+    validations:
+      required: true
+  - type: textarea
+    id: metadata
+    attributes:
+      label: Redacted metadata
+      description: Error code, route, engine/model aliases, timing, and resource signals without payload.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public safety
+      options:
+        - label: I removed secrets, private paths, network coordinates, and payload content.
+          required: true

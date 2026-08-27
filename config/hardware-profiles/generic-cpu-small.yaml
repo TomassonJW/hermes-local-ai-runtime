@@ -1,0 +1,33 @@
+id: generic-cpu-small
+status: candidate
+description: Public low-resource profile for specialist capabilities and smoke tests.
+hardware:
+  architecture: [x86_64, arm64]
+  cpu:
+    allocated_vcpu_min: 4
+  memory:
+    allocated_gib_min: 8
+  accelerator:
+    type: none
+resource_policy:
+  normal_cpu_cores: 2
+  burst_cpu_cores: 3
+  soft_memory_gib: 4
+  hard_memory_gib: 6
+  heavy_concurrency: 0
+  light_concurrency: 1
+  queue_max_jobs: 4
+capability_expectations:
+  enabled:
+    - system.health
+    - document.text_extract
+    - document.ocr
+    - text.embed
+    - search.rerank
+  conditional:
+    - text.extract_structured
+    - vision.analyze
+    - audio.transcribe
+notes:
+  - A 2B VLM is not guaranteed.
+  - Installation probe may disable heavy routes.

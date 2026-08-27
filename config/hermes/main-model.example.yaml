@@ -1,0 +1,11 @@
+# Conceptual template: verify exact keys against the installed Hermes version.
+# Use only after the runtime's OpenAI-compatible main-model route has passed gates.
+model:
+  provider: custom
+  name: hlair/local-main
+  base_url: http://127.0.0.1:8090/v1
+  api_key_env: HLAIR_API_KEY
+  timeout_seconds: 300
+
+# A future multimodal main model preserves image access better than a generic
+# auxiliary text description, but requires hardware and compatibility proof.

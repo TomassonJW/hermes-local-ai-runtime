@@ -1,0 +1,268 @@
+schema_version: 1
+updated_at: "2026-08-27"
+notice: >
+  Candidates are not installed, benchmarked, approved, or bundled. Exact
+  revisions, files, hashes, and engine compatibility are installation records.
+
+engines:
+  - id: llama-cpp
+    status: candidate
+    source: https://github.com/ggml-org/llama.cpp
+    license: MIT
+    roles:
+      - text_generation
+      - multimodal_generation
+      - embeddings
+      - reranking
+      - structured_output
+    rationale:
+      - CPU-first GGUF inference
+      - OpenAI-compatible server surfaces
+      - future accelerator backends
+    risks:
+      - multimodal and flags are version-sensitive
+      - model lifecycle requires orchestration
+    required_gate: G-03
+
+  - id: llama-swap
+    status: candidate
+    source: https://github.com/mostlygeek/llama-swap
+    license: MIT
+    roles:
+      - process_lifecycle
+      - on_demand_loading
+      - idle_unload
+    risks:
+      - must not become the domain source of truth
+      - verify cancellation, groups, metrics, and crash recovery
+    required_gate: G-03
+
+  - id: localai
+    status: candidate
+    source: https://github.com/mudler/LocalAI
+    license: MIT
+    roles:
+      - alternative_execution_platform
+    rationale:
+      - broad modality and backend coverage
+      - could reduce custom implementation
+    risks:
+      - broader operational surface
+      - overlap with the intended control plane
+    required_gate: G-03
+
+  - id: paddleocr
+    status: candidate
+    source: https://github.com/PaddlePaddle/PaddleOCR
+    license: Apache-2.0
+    roles:
+      - ocr
+      - document_layout
+      - document_parsing
+    required_gate: G-06
+
+  - id: whisper-cpp
+    status: candidate
+    source: https://github.com/ggml-org/whisper.cpp
+    license: MIT
+    roles:
+      - speech_to_text
+    required_gate: G-08
+
+model_families:
+  - id: qwen3-vl-2b-instruct-gguf
+    status: candidate
+    source:
+      repository: Qwen/Qwen3-VL-2B-Instruct-GGUF
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - vision.analyze@1
+      - vision.extract_structured@1
+      - vision.classify@1
+      - text.generate@1
+    target_profiles:
+      - hermes-cpu-8vcpu-16gib
+    candidate_artifacts:
+      language_model_quantization: Q4_K_M
+      vision_projector_quantization: Q8_0_or_measured_alternative
+    strengths_to_test:
+      - multilingual OCR and image understanding
+      - structured output
+      - Hermes auxiliary vision
+    limitations_to_test:
+      - cold start and CPU latency
+      - tiny text
+      - multi-image reasoning
+      - KV Q4 quality regression
+      - llama.cpp version compatibility
+
+  - id: lfm2.5-vl-1.6b
+    status: discovered
+    source:
+      repository: LiquidAI/LFM2.5-VL-1.6B
+      official: true
+    license:
+      identifier: LFM-1.0
+      review_status: pending
+    capabilities:
+      - vision.analyze@1
+      - vision.extract_structured@1
+      - vision.classify@1
+    target_profiles:
+      - hermes-cpu-8vcpu-16gib
+    strengths_to_test:
+      - compact multimodal inference
+      - French support
+    blockers:
+      - explicit licence review before candidate promotion
+
+  - id: smolvlm2-500m
+    status: candidate
+    source:
+      repository: HuggingFaceTB/SmolVLM2-500M-Video-Instruct
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - vision.classify@1
+      - vision.analyze@1
+    target_profiles:
+      - generic-cpu-small
+      - hermes-cpu-8vcpu-16gib
+    intended_role:
+      - fast triage and low-cost image description
+    limitations_to_test:
+      - primarily English
+      - lower reasoning quality than larger candidates
+      - not a document/OCR replacement
+
+  - id: paddleocr-vl-0.9b
+    status: candidate
+    source:
+      repository: PaddlePaddle/PaddleOCR
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - document.ocr@1
+      - document.parse@1
+      - document.extract_structured@1
+    intended_role:
+      - document-specialist pipeline
+    limitations_to_test:
+      - CPU packaging and latency
+      - pipeline dependency size
+      - multilingual French administrative documents
+
+  - id: pp-ocrv6
+    status: candidate
+    source:
+      repository: PaddlePaddle/PaddleOCR
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - document.ocr@1
+    variants_to_test:
+      - tiny
+      - small
+      - medium
+    intended_role:
+      - resident or low-cost OCR specialist
+
+  - id: qwen3-embedding-0.6b
+    status: candidate
+    source:
+      repository: Qwen/Qwen3-Embedding-0.6B
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - text.embed@1
+    target_profiles:
+      - hermes-cpu-8vcpu-16gib
+    alternatives:
+      - smaller ONNX/FastEmbed multilingual models
+
+  - id: qwen3-reranker-0.6b
+    status: candidate
+    source:
+      repository: Qwen/Qwen3-Reranker-0.6B
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - search.rerank@1
+    target_profiles:
+      - hermes-cpu-8vcpu-16gib
+    alternatives:
+      - compact ONNX cross-encoders
+
+  - id: qwen3-0.6b
+    status: candidate
+    source:
+      repository: Qwen/Qwen3-0.6B
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - text.extract_structured@1
+      - text.classify@1
+      - text.generate@1
+    intended_role:
+      - bounded structured text and classification
+    limitations_to_test:
+      - administrative ambiguity
+      - schema repair rate
+      - multilingual robustness
+
+  - id: qwen3-asr-0.6b
+    status: candidate
+    source:
+      repository: Qwen/Qwen3-ASR-0.6B
+      official: true
+    license:
+      identifier: Apache-2.0
+      review_status: pending
+    capabilities:
+      - audio.transcribe@1
+    intended_role:
+      - alternative to Whisper baseline
+    limitations_to_test:
+      - CPU packaging and real-time factor
+      - French quality
+      - streaming maturity
+
+specialist_families_to_discover:
+  object_detection:
+    desired_runtime: ONNX
+    status: discovered
+    selection_basis:
+      - CPU latency
+      - coordinates and class accuracy
+      - licence
+      - model size
+  image_embeddings:
+    desired_runtime: ONNX
+    status: discovered
+    selection_basis:
+      - multilingual/text-image compatibility
+      - duplicate and similarity quality
+      - dimensions and storage cost
+  fast_text_embeddings:
+    desired_runtime: ONNX
+    status: discovered
+    selection_basis:
+      - French semantic retrieval
+      - batch throughput
+      - dimensions
+      - licence

@@ -1,0 +1,13 @@
+Hermes Local AI Runtime
+Copyright 2026 Thomas Jankowski
+
+This product includes only the original repository code and documentation under
+Apache License 2.0. It may download, invoke, or integrate third-party runtimes,
+models, datasets, and libraries whose licences and notices remain independent.
+
+The words “Hermes”, model names, runtime names, and third-party project names are
+used only to describe interoperability or provenance. Their trademarks and
+licences belong to their respective owners.
+
+A generated installation must produce a machine-readable third-party inventory
+and preserve all notices required by the selected components.

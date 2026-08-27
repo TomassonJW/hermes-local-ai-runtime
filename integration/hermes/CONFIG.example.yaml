@@ -1,0 +1,14 @@
+integration:
+  runtime_base_url: http://127.0.0.1:8090
+  openai_base_url: http://127.0.0.1:8090/v1
+  api_key_env: HLAIR_API_KEY
+  default_profile: balanced
+  cloud_fallback_allowed: false
+  capabilities:
+    vision: vision.analyze@1
+    document_ocr: document.ocr@1
+    document_parse: document.parse@1
+    structured_text: text.extract_structured@1
+    embeddings: text.embed@1
+    rerank: search.rerank@1
+    transcription: audio.transcribe@1

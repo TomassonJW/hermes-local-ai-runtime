@@ -1,0 +1,89 @@
+schema_version: 1
+status: candidate
+notice: Presets are hypotheses until benchmarked on exact artefacts and engines.
+
+presets:
+  - id: vision-balanced-cpu-v1
+    capability: vision.analyze@1
+    model_family: qwen3-vl-2b-instruct-gguf
+    hardware_profile: hermes-cpu-8vcpu-16gib
+    engine: llama-cpp
+    parameters:
+      context_tokens: 8192
+      max_output_tokens: 1024
+      temperature: 0.1
+      top_p: 0.9
+      kv_cache: q8
+      parallel_sequences: 1
+      cpu_threads: 4
+      image_budget:
+        mode: bounded
+        max_images: 2
+        max_pixels_each: 12000000
+    lifecycle:
+      lazy_load: true
+      idle_ttl_seconds: 300
+    validation:
+      required:
+        - vision_task_suite
+        - resource_guardrails
+        - structured_output
+      compare_variants:
+        - kv_f16_reference
+        - kv_q8
+        - kv_q4_memory_constrained
+
+  - id: structured-text-fast-cpu-v1
+    capability: text.extract_structured@1
+    model_family: qwen3-0.6b
+    hardware_profile: hermes-cpu-8vcpu-16gib
+    engine: llama-cpp
+    parameters:
+      context_tokens: 4096
+      max_output_tokens: 1024
+      temperature: 0
+      parallel_sequences: 1
+      cpu_threads: 3
+      json_schema_required: true
+    lifecycle:
+      lazy_load: true
+      idle_ttl_seconds: 900
+
+  - id: embedding-balanced-cpu-v1
+    capability: text.embed@1
+    model_family: qwen3-embedding-0.6b
+    hardware_profile: hermes-cpu-8vcpu-16gib
+    engine: to_be_selected
+    parameters:
+      batch_size: benchmark
+      normalisation: declare_from_model
+      cpu_threads: 4
+    lifecycle:
+      residency: benchmark
+
+  - id: rerank-balanced-cpu-v1
+    capability: search.rerank@1
+    model_family: qwen3-reranker-0.6b
+    hardware_profile: hermes-cpu-8vcpu-16gib
+    engine: to_be_selected
+    parameters:
+      max_candidates: 50
+      max_returned: 20
+      cpu_threads: 4
+    lifecycle:
+      idle_ttl_seconds: 1800
+
+  - id: whisper-cpu-baseline-v1
+    capability: audio.transcribe@1
+    model_family: whisper
+    hardware_profile: hermes-cpu-8vcpu-16gib
+    engine: whisper-cpp
+    parameters:
+      model_variant: select_by_benchmark
+      language_hint: auto_or_fr
+      vad: true
+      timestamps: segment
+      cpu_threads: 4
+    lifecycle:
+      lazy_load: true
+      idle_ttl_seconds: 600
