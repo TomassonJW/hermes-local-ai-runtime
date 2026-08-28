@@ -15,6 +15,7 @@ Current accepted bootstrap decisions:
 - G-06 vision/document workers reuse the G-05 job core (ADR-0010);
 - G-07 embeddings and rerank are computation, not a vector DB (ADR-0011);
 - G-08 audio is batch whisper.cpp, not streaming (ADR-0012);
-- G-09 is a rootless prefix install; systemd is shipped not enabled (ADR-0013).
+- G-09 is a rootless prefix install; systemd is shipped not enabled (ADR-0013);
+- G-10 consumers speak capabilities, not model files (ADR-0014).
 
 A decision becomes active only when its ADR status is `Accepted` or when this repository's product constitution explicitly makes it non-negotiable.

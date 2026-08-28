@@ -2,10 +2,10 @@
 
 Only the active slice is executable. Later slices are ordered hypotheses, not commitments.
 
-## Closed - Takeover, UI-00, engine, G-05 to G-09
+## Closed - Takeover, UI-00, engine, G-05 to G-10
 
-G-00 through G-09 and UI-00 are closed on `main`. Do not re-open them without a
-new defect. Hub top-bar shortcut is in HermesHub `a7cd8dc`.
+G-00 through G-10 and UI-00 are closed on `main`. Do not re-open them without a
+new defect.
 
 - [x] Shared capability-kernel boundary.
 - [x] Actual VM profile separated from host capacity.
@@ -17,22 +17,19 @@ new defect. Hub top-bar shortcut is in HermesHub `a7cd8dc`.
 - [x] Missions and gates.
 - [x] CI validates the baseline.
 - [x] Final SHA recorded in `BASELINE.md`.
-- [x] G-02 through G-05 on loopback.
-- [x] G-06 vision/document families on synthetic fixtures.
-- [x] G-07 embeddings and bounded rerank (no shared vector DB).
-- [x] G-08 whisper.cpp batch transcription (no streaming, not Whisper Large).
-- [x] G-09 rootless prefix install (unit shipped, not enabled).
+- [x] G-02 through G-09 on loopback / prefix install.
+- [x] G-10 two in-repo consumers; engine swap without consumer edits.
 
-## Next executable - G-10 (waiting for explicit GO)
+## Next executable - G-11 (waiting for explicit GO)
 
-- [ ] Two independent consumers (`missions/08-hardening-packaging-release.md`).
+- [ ] Public release (`missions/08-hardening-packaging-release.md`).
 - [ ] Do not start without Thomas's explicit lot decision.
 
 ## Operations and release
 
-- [x] Packaging, model-store CLI, upgrade/rollback, notices, backup.
+- [x] Packaging, model-store CLI, upgrade/rollback, notices (prefix only).
+- [x] Two independent consumers (in-repo proof; not live Hermes / production Sillage).
 - [ ] Live operations UI and Hermes installation.
-- [ ] Two independent consumers.
 - [ ] Public release gates.
 
 ## Parked
