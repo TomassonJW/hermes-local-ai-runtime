@@ -1,12 +1,11 @@
 # State
 
-Last updated: 2026-08-29 00:05 CEST (systemd user services enabled)
+Last updated: 2026-08-29 00:20 CEST (UI-01 accepted)
 
 ## Phase
 
-G-00 through G-11 and UI-00 remain closed. UI-01 is **delivered for human
-look**, not accepted. Runtime is on loopback only, now supervised by systemd
-user services (ADR-0017).
+G-00 through G-11, UI-00 and UI-01 are closed. Runtime is on loopback only,
+supervised by systemd user services (ADR-0017).
 
 ## Product status
 
@@ -20,8 +19,9 @@ user services (ADR-0017).
 
 ## Current truth
 
-Runtime can be used from the private Hub URL. Not production-supported.
-Not a daily-driver guarantee. UI-01 waits for Thomas's visible verdict.
+Runtime is usable from the private Hub URL and UI-01 was accepted by Thomas on
+2026-08-29 ("UI-01 pass"). Acceptance covers the cockpit as a private
+operations console; it is not a production-support or daily-driver guarantee.
 
 Two live defects were found and fixed after the first delivery: the volatile
 upload store starved after 8 uploads and killed every media capability, and
@@ -39,9 +39,10 @@ sweep under systemd.
 
 ## Gates
 
-- G-00 to G-11 and UI-00: **passed**.
-- UI-01: **delivered for look**, not accepted.
+- G-00 to G-11, UI-00 and UI-01: **passed**.
 
 ## Next proof
 
-Thomas looks at the official URL and says if the cockpit is usable.
+No lot is open. The next one requires an explicit decision from Thomas.
+A candidate is a second independent consumer loading the Hermes skill
+`hermes-local-ai-runtime`, which would exercise the G-10 contract for real.

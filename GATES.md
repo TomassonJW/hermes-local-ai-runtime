@@ -21,8 +21,7 @@ Must not provide real inference, a permanent backend, model downloads, fake live
 Pass only after canonical UI checks, desktop/mobile verification, private URL verification when authorised, and Thomas's explicit verdict.
 
 **Absolute stop (historical):** UI-00 required Thomas's verdict before UI-01.
-UI-01 was authorised 2026-08-28. The live console is not accepted until the
-visible verdict.
+UI-01 was authorised 2026-08-28 and accepted 2026-08-29.
 
 ## G-02 — Read-only environment probe
 
@@ -70,4 +69,10 @@ Requires support matrix, reproducible install/uninstall, API compatibility polic
 
 Serve the operations console from the running control plane on loopback.
 Operator try surface uses capabilities and profiles, not GGUF filenames.
-Pass only after Thomas's visible verdict. systemd remains not enabled.
+Pass only after Thomas's visible verdict.
+
+**Status: PASSED.** Thomas gave the explicit verdict "UI-01 pass" on
+2026-08-29 after the two live defects were fixed and systemd was enabled.
+The "systemd remains not enabled" clause of this gate was lifted the same day
+by his explicit request (ADR-0017); the console stays loopback-only and
+rootless, and this pass is not a production-support claim.

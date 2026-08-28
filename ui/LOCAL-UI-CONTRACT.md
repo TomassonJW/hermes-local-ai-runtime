@@ -8,7 +8,7 @@
 - UI canon commit: `4d720bf20f3c89e9a9d71072f0b76d55d225cb62`
 - Required procedure: `canonical-ui-design`
 - First visible gate: UI-00 (closed)
-- UI-01: live loopback console, waiting for visible verdict
+- UI-01: live loopback console, accepted 2026-08-29
 
 ## Interface purpose
 

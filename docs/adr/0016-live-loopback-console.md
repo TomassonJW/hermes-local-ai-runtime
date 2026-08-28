@@ -20,3 +20,11 @@ filenames. Do not enable systemd. Do not claim production support.
 ## Validation
 
 `tests/test_runtime_ui01.py`, `ui/shell` vitest, live `/healthz` on 8830.
+
+## Acceptance
+
+Thomas gave the explicit visible verdict "UI-01 pass" on 2026-08-29, after the
+two live defects of 2026-08-28 were fixed and systemd was enabled (ADR-0017).
+The "do not enable systemd" clause of this ADR is superseded by ADR-0017. The
+acceptance covers a private loopback operations console; it is not a
+production-support claim.

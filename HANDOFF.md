@@ -16,7 +16,8 @@ A new session must resume from Git. Notion is not required.
 
 ## Current lot
 
-UI-01 live loopback console. G-00 to G-11 and UI-00 stay closed.
+None open. UI-01 was accepted on 2026-08-29; G-00 to G-11 and UI-00 stay
+closed. Do not start a new lot without an explicit decision from Thomas.
 
 ## Hard stops still in force
 
@@ -35,8 +36,9 @@ decision. systemd is no longer a hard stop: user services were enabled on
 
 ## Next lot
 
-Wait for Sillage (or another app) to load Hermes skill `hermes-local-ai-runtime`.
-No gated lot here. UI-01 cockpit was used live.
+None authorised. UI-01 is accepted and the cockpit was used live. A natural
+candidate is a second independent consumer (Sillage or another app) loading the
+Hermes skill `hermes-local-ai-runtime`, but it needs Thomas's explicit go.
 
 ## Resume checklist
 

@@ -20,6 +20,14 @@ The project follows Semantic Versioning once executable public releases begin. B
   wins when set, a group/world-readable file is refused, and a run with neither
   source still refuses to start.
 
+### Changed
+
+- the runtime and llama-swap now run as systemd **user** services
+  (`hlair.target`), enabled at boot with crash restart (ADR-0017). This lifts
+  the "systemd shipped not enabled" clause of ADR-0013/ADR-0016 at Thomas's
+  explicit request. Still rootless, still loopback-only; rollback in
+  `operations/RUNBOOK-systemd.md`.
+
 ### Added
 
 - G-05 loopback capability/job core (native `/api/v1` plus OpenAI chat adapter);
@@ -44,9 +52,9 @@ The project follows Semantic Versioning once executable public releases begin. B
 - G-09 does not enable systemd and does not download models.
 - G-10 does not install the Hermes skill live or connect production Sillage.
 - G-11 is a source candidate, not production support.
-- UI-01 is a live loopback console. systemd user services are enabled since
-  2026-08-28 (ADR-0017); this remains a private loopback deployment, not
-  production support.
+- UI-01 is a live loopback console, accepted by Thomas on 2026-08-29
+  (ADR-0016). Acceptance is for a private operations console, not production
+  support.
 
 ## [0.1.0] - 2026-08-27
 
