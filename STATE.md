@@ -1,20 +1,26 @@
 # State
 
-Last updated: 2026-08-27 (Hermes takeover session)
+Last updated: 2026-08-28 (G-05 closure candidate)
 
 ## Phase
 
-Hermes takeover complete (G-01). UI-00 in progress.
+Phase 3 complete through G-05: measured engine/resource foundation and the API
+job core are validated on loopback. No permanent runtime deployment exists.
 
 ## Product status
 
-- Repository public, version `0.1.0`.
+- Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0` — verified present in clone.
 - Operational owner: Hermes (clone at the canonical productions workspace on the Hermes VM).
-- Bootstrap validator and five tests pass on this clone (pinned deps, disposable venv outside the repo).
+- Bootstrap validator and 42 tests pass on this clone (pinned deps, disposable venv outside the repo).
 - Coverage map produced: `operations/COVERAGE-MAP-2026-08-27.md`.
 - Live VM profile refreshed read-only: `operations/LIVE-PROFILE-2026-08-27.md` — measured 10 vCPU / ~19.5 GiB / no GPU / no swap device; favorable vs pinned 8/16, conservative budget kept; profile update proposed, not applied.
-- Implementation, installation, runtime service, model downloads, Hermes configuration changes, consumers: none.
+- G-02/G-03/G-04 evidence: `operations/G02-ENVIRONMENT-PROBE-2026-08-27.md`
+  and `benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md`.
+- G-05 control-plane source and evidence: `runtime/` and
+  `operations/G05-API-JOB-CORE-2026-08-28.md`.
+- Permanent installation/runtime service, Hermes configuration changes and
+  production consumers: none. Spike artefacts and model weights remain outside Git.
 - Current authority: this repository.
 
 ## Current truth
@@ -28,16 +34,28 @@ The first deployment target is the existing Hermes VM with 8 vCPU, 16 GiB RAM an
 - G-00 — Bootstrap integrity: **passed**.
 - G-01 — Hermes takeover: **passed** (evidence in `operations/`).
 - UI-00 — Operations shell: **ACCEPTED** — explicit verdict « ACCEPTÉ » from Thomas, 2026-08-27, on the shell at commit `21cb372` served on the private surface.
-- G-02 — Read-only environment probe: next gate; must be current before any backend work starts.
-- Runtime backend: unblocked by UI-00 acceptance, still requires G-02 and then the G-03 engine spike.
+- G-02 — Read-only environment probe: **passed**.
+- G-03 — Engine spike: **passed**; llama.cpp `b10662` + llama-swap `v251`
+  selected, LocalAI rejected on measured profile-A behaviour.
+- G-04 — Resource safety: **passed** for the disposable spike; hard cap,
+  refusal, queue, lifecycle, crash recovery and 1-heavy + 2-light proven.
+- G-05 — API and job core: **passed on loopback**; native jobs, auth,
+  idempotency, admission, process cancellation, provenance, warnings, bounded
+  request/upload/result memory, metrics and OpenAI chat adapter tested against
+  the real route. Shutdown leaves no child worker alive.
 
 ## Next proof
 
-G-02 read-only probe refreshed, then G-03 engine spike: reproducible measurements of llama.cpp (+ lifecycle), LocalAI comparison and specialist workers on the target VM, ending in ADR amendments selecting the thinnest measured architecture. No permanent installation before G-03 conclusions and their gates.
+Next planned vertical is G-06 (vision and documents), after an explicit next-lot
+decision. It must reuse the G-05 capability/job boundary and compare native
+text extraction, OCR/layout specialists and the measured general VLM without
+claiming universal vision quality.
 
 ## Blockers and risks
 
-No blocker for read-only takeover. UI-00 must be accepted before backend. Engine selection remains a measured spike.
+No blocker remains in the authorised G-02 through G-05 lot. Permanent service,
+live UI wiring, Hermes integration and consumer adoption remain intentionally
+unstarted behind later gates.
 
 Risks: platform sprawl, false vision equivalence, resource interference, consumer/model coupling, licence drift, public-data leakage, hidden cloud fallback and premature GPU-specific architecture.
 

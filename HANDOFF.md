@@ -1,59 +1,59 @@
 # Handoff
 
-- Date: 2026-08-27 (updated by Hermes after G-01)
+- Date: 2026-08-28 (updated by Hermes after G-05)
 - Project: Hermes Local AI Runtime
 - Repository: `TomassonJW/hermes-local-ai-runtime`
-- Version: `0.1.0`
+- Version: baseline `0.1.0`; API/job-core candidate `0.2.0-dev`
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21`
 - Baseline branch: `baseline/v0.1.0`
 
 ## Handoff status
 
-Hermes completed G-01 (safe clone, corpus read, validator + tests pass, coverage
-map and redacted live profile committed) and delivered UI-00: a complete
-operations shell (Overview, Capabilities, Models, Jobs, Evaluations, Resources,
-Updates, Settings + deep-linkable details) built from a versioned simulated
-fixture, tested (14 UI tests, typecheck, build), verified in a real headless
-browser on desktop and mobile viewports against the official private tailnet
-route, with zero console errors. Evidence and registry:
-`ui/UI-00-PAGE-REGISTRY.md`. Serving: static build behind the private tailnet
-path `/apps/local-ai-runtime` (loopback file server; restart command in
-`ui/shell/README.md`). Live VM measures 10 vCPU / ~19.5 GiB / no GPU / no swap
-device; conservative budgets unchanged; profile amendment proposed, not applied.
+G-01 and accepted UI-00 remain the takeover foundation. The authorised Phase 2
+and Phase 3 lot is now complete through G-05:
 
-**UI-00 verdict recorded: ACCEPTÉ** (Thomas, 2026-08-27, shell at `21cb372`).
-The runtime backend track is now open, gated as follows: G-02 read-only probe
-must be current, then the G-03 engine spike selects the architecture by
-measurement, then G-04 proves resource safety on the actual VM. Permanent
-installations, services and model downloads stay behind their respective gates.
+- G-02 current read-only VM probe: passed.
+- G-03 engine spike: llama.cpp `b10662` plus llama-swap `v251` selected by
+  measurement; LocalAI rejected for profile A; ONNX embedding specialist kept.
+- G-04 resource safety: hard cap, pressure refusal, lifecycle, crash recovery,
+  cancellation, bounded queue and 1-heavy + 2-light behaviour proven in the
+  disposable workspace.
+- G-05 API/job core: `runtime/`, `config/g05-runtime.example.yaml`, updated
+  OpenAPI/error contracts and `operations/G05-API-JOB-CORE-2026-08-28.md`.
+  Forty-two tests pass. Final loopback smoke against the real llama.cpp route
+  produced schema-valid structured JSON in 1,900 ms, cancelled a running real
+  job in 24 ms and returned a valid OpenAI chat response. Hostile-review
+  regressions now cover request/result byte ceilings, unique consumer identity,
+  canonical request compatibility, atomic cancellation and worker teardown.
+
+No inference service is permanently installed or active. No backend listener,
+Hermes configuration change, live-UI wiring or production consumer integration
+exists. The accepted UI-00 shell remains explicitly simulated.
 
 ## Next hard stop
 
-No single hard stop of the UI-00 kind remains; the next human decisions are
-material trade-offs surfaced by the engine spike (G-03 ADR amendments) and any
-gate that touches cost, exposure, licence or product ambition.
+The user-authorised lot ends at G-05. Stop before G-06 until the next explicit
+lot decision. The planned next vertical is vision and documents; it must reuse
+the capability/job contract and preserve measured specialists, abstention and
+review requirements.
 
-## Mandatory takeover prompt
+## Resume from here
 
-```text
-Take over TomassonJW/hermes-local-ai-runtime from the baseline recorded in BASELINE.md.
+1. Verify `main`, working tree and CI at the G-05 closure commit.
+2. Read `STATE.md`, `operations/G05-API-JOB-CORE-2026-08-28.md` and the G-06
+   mission before any new implementation.
+3. Do not create a permanent service, install models, wire Hermes or connect the
+   UI until the corresponding later gate and rollback are authorised.
 
-Clone it or update the existing clone without overwriting foreign work. Read AGENTS.md, provenance/COMPILATION-MANIFEST.yml, product/00-index.md, architecture/00-index.md, GATES.md, STATE.md, HANDOFF.md, and the complete active constitution in the prescribed order. Run the bootstrap validator and produce a coverage map.
+## Next session
 
-You own operational Git, local architecture, roadmap, backlog, ADRs, implementation, tests, deployment, and future handoffs. Do not return to Notion during ordinary sessions.
-
-The repository authorises only safe takeover and read-only preflight. Because the product includes an interface, execute UI-00 first using the pinned canonical UI baseline and ui/LOCAL-UI-CONTRACT.md. Build a truthful operations shell with simulated data only, serve and verify it on the authorised private surface, then stop before UI-01 and before any runtime backend, permanent package, service, model download, or Hermes configuration change. Wait for Thomas's explicit visible-product verdict.
-```
-
-## First session
-
-1. Verify baseline, branch, remote and working tree.
-2. Run `python scripts/validate_bootstrap.py` and `pytest`.
-3. Read the corpus and produce a coverage map.
-4. Refresh VM allocation/headroom/prerequisites read-only and redact the report.
-5. Update `STATE.md`, `HANDOFF.md` and active backlog.
-6. Commit and push the read-only takeover evidence.
-7. Prepare UI-00; do not install or start the AI runtime.
+1. Verify `main`, the working tree and the latest CI result.
+2. Read `STATE.md`, this handoff, `GATES.md` and the mission for the next
+   explicitly authorised lot.
+3. Preserve the G-05 native capability/job boundary and its byte, identity,
+   cancellation and loopback invariants.
+4. Stop before G-06, permanent service activation, UI wiring or consumer
+   integration unless Thomas explicitly authorises that lot.
 
 ## Do not do
 

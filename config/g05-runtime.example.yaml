@@ -1,0 +1,85 @@
+# G-05 loopback configuration example.
+# Copy outside Git, set HERMES_LOCAL_AI_TOKEN in the process environment and
+# adjust state paths. The token value must never be written into this file.
+listen:
+  host: 127.0.0.1
+  port: 8850
+
+# The parent is created with mode 0700 and the database with mode 0600.
+db_path: ./state/g05-runtime.db
+dev_mode: false
+
+auth:
+  tokens:
+    - name: local-consumer
+      token_env: HERMES_LOCAL_AI_TOKEN
+      scopes:
+        - capability:invoke:*
+        - job:read:self
+        - job:cancel:self
+        - system:read
+
+budget:
+  heavy_slots: 1
+  light_slots: 2
+  queue_max: 8
+  memory_floor_available_mib: 4096
+  hard_memory_mib: 10240
+  result_max_count: 64
+  request_max_bytes: 524288
+  result_max_bytes: 4194304
+  result_store_max_bytes: 16777216
+
+routes:
+  # Deterministic dummy used only for the first vertical and smoke diagnostics.
+  - id: text-generate-dummy-fast@2026-08
+    capability: text.generate
+    capability_version: 1.0.0
+    profiles: [fast]
+    worker: echo
+    engine: dummy
+    engine_version: g05
+    resource_class: light
+    memory_estimate_mib: 1
+    sync_allowed: true
+    timeout_ms: 2000
+    preset: g05-dummy
+
+  # Measured real route selected by ADR-0002. The upstream remains loopback-only.
+  - id: text-generate-balanced@2026-08
+    capability: text.generate
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: text-small
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 1200
+    sync_allowed: true
+    timeout_ms: 120000
+    preset: qwen3-0.6b-q8-no-think
+    max_input_chars: 16000
+    max_upstream_response_bytes: 4194304
+    model_artifacts:
+      - sha256:9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031
+
+  - id: text-extract-structured-balanced@2026-08
+    capability: text.extract_structured
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: text-small
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 1200
+    sync_allowed: true
+    timeout_ms: 120000
+    preset: qwen3-0.6b-q8-json-schema-no-think
+    max_input_chars: 16000
+    max_upstream_response_bytes: 4194304
+    model_artifacts:
+      - sha256:9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031

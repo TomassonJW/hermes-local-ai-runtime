@@ -17,9 +17,11 @@
 | `MODEL_LOAD_FAILED` | 503 | maybe | Worker/model not ready |
 | `WORKER_CRASHED` | 503 | maybe | Worker exited |
 | `OUTPUT_SCHEMA_FAILED` | 422 | maybe | Output invalid/repair failed |
+| `OUTPUT_TOO_LARGE` | 422 | no | Result exceeds the configured byte limit |
 | `LOW_CONFIDENCE` | 422 | after review | Route abstained |
 | `LICENCE_BLOCKED` | 451 | no | Artefact unauthorised |
 | `IDEMPOTENCY_CONFLICT` | 409 | no | Key reused for different payload |
+| `RESULT_NOT_READY` | 409 | yes | Job exists but has no immutable result yet |
 | `NOT_FOUND` | 404 | no | Resource absent/invisible |
 | `INTERNAL_ERROR` | 500 | maybe | Unexpected control-plane failure |
 

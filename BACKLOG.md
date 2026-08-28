@@ -29,22 +29,25 @@ Only the active slice is executable. Later slices are ordered hypotheses, not co
 
 ## Post-acceptance — Engine spike
 
-- [ ] Measure VM headroom read-only.
-- [ ] Reproducible llama.cpp text/vision probes.
-- [ ] Evaluate llama-swap lifecycle.
-- [ ] Compare equivalent tasks in LocalAI.
-- [ ] Test Paddle/ONNX/whisper.cpp specialists.
-- [ ] Compare startup, idle/peak RAM, latency, cancellation, metrics, packaging, licence and recovery.
-- [ ] Amend ADRs.
+- [x] Measure VM headroom read-only (G-02).
+- [x] Reproducible llama.cpp text/vision probes.
+- [x] Evaluate llama-swap lifecycle.
+- [x] Compare equivalent tasks in LocalAI; reject for profile A on measurement.
+- [x] Test ONNX embeddings and native PDF discrimination; OCR and whisper remain
+  explicitly gated to G-06/G-08.
+- [x] Compare startup, idle/peak RAM, latency, cancellation, metrics, packaging, licence and recovery.
+- [x] Prove G-04 hard cap, queue, 1-heavy + 2-light and crash recovery.
+- [x] Amend ADRs and candidate registry.
 
 ## Gateway foundation
 
-- [ ] Health/readiness/discovery.
-- [ ] Jobs submit/status/cancel/result.
-- [ ] Idempotency and budgets.
-- [ ] Registry/routes/admission/leases.
-- [ ] Metadata-only audit and metrics.
-- [ ] OpenAI adapters and typed clients after stabilisation.
+- [x] Health/readiness/discovery.
+- [x] Jobs submit/status/cancel/result with terminable worker processes.
+- [x] Idempotency and budgets.
+- [x] Registry/routes/admission/leases.
+- [x] Metadata-only request IDs and metrics; no payload logging.
+- [x] OpenAI chat/model adapter through the native job core.
+- [ ] Typed consumer clients after contract stabilisation.
 
 ## Capability families
 
