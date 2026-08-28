@@ -2,7 +2,8 @@
 
 ## Supported state
 
-The repository is currently a design and engineering bootstrap. No runtime release is supported yet.
+The repository is a public source candidate. Loopback runtime code exists.
+No production release is supported.
 
 Security reports about repository content, planned architecture, dependency selection, or future implementation are still useful. Do not attach secrets, private documents, model-provider credentials, or production request payloads to a public issue.
 

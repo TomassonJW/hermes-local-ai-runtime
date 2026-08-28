@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-08-28 13:40 CEST
+Last updated: 2026-08-28 14:00 CEST
 
 ## Why this file exists
 
@@ -12,21 +12,20 @@ A new session must resume from Git. Notion is not required.
 - Canonical clone: this productions tree on the Hermes VM
 - Official branch: `main`
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` (`baseline/v0.1.0`)
-- Verify `main` is clean at `5870273` or newer before mutation.
+- Verify `main` is clean at the G-11 commit or newer before mutation.
 
 ## Current lot
 
-G-00 through G-10 and UI-00 are **closed**. G-10 is two in-repo consumers
-on capability contracts. Sillage does not define the product.
+G-00 through G-11 and UI-00 are **closed**. G-11 is a public source
+candidate, not production support.
 
-Do not reopen G-00 to G-10 without a new defect.
+Do not reopen G-00 to G-11 without a new defect.
 
 ## Hard stops still in force
 
 Do not install a permanent service, download/promote production weights, expose
 beyond the authorised private boundary, write consumer data, wire live UI-01,
-change Hermes `config.yaml`, or start G-11 until Thomas gives an explicit lot
-decision.
+or change Hermes `config.yaml` without a new explicit decision.
 
 ## What already exists
 
@@ -34,18 +33,19 @@ decision.
 - Hub top-bar IA locale -> `/apps/local-ai-runtime/` (HermesHub `a7cd8dc`)
 - G-05 to G-08 workers on loopback
 - G-09 `python3 -m installkit`
-- G-10 `consumers/hermes_app.py` and `consumers/sillage_app.py`
+- G-10 `consumers/`
+- G-11 checksums and source-release docs
 - Spike-g03 binaries and weights **outside Git**
 
 ## Next lot
 
-G-11. Mission: `missions/08-hardening-packaging-release.md` (release slice).
+None gated. Wait for a new explicit decision.
 
 ## Resume checklist
 
 1. Read `AGENTS.md`, `STATE.md`, this file, `GATES.md`.
 2. Confirm `main` is clean.
-3. Do not start G-11 without explicit GO.
+3. Do not start a new lot without explicit GO.
 4. If the Hub button is dead, restart only the UI-00 static server.
 
 ## Evidence
@@ -57,3 +57,4 @@ G-11. Mission: `missions/08-hardening-packaging-release.md` (release slice).
 - G-08: `operations/G08-AUDIO-2026-08-28.md`
 - G-09: `operations/G09-PACKAGING-2026-08-28.md`
 - G-10: `operations/G10-CONSUMERS-2026-08-28.md`
+- G-11: `operations/G11-PUBLIC-RELEASE-2026-08-28.md`

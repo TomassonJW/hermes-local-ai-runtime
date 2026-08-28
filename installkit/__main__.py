@@ -14,6 +14,7 @@ from .kit import (
     uninstall,
     upgrade,
 )
+from .release import verify_checksums, write_checksums, write_support_bundle
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -44,9 +45,28 @@ def main(argv: list[str] | None = None) -> int:
     p_reg.add_argument("--id", required=True)
     p_q = sub.add_parser("model-quota")
     add_prefix(p_q)
+    p_sum = sub.add_parser("checksums")
+    p_sum.add_argument("--verify", action="store_true")
+    p_sum.add_argument("--source-root", default=".")
+    p_bun = sub.add_parser("support-bundle")
+    p_bun.add_argument("--dest", required=True)
+    p_bun.add_argument("--source-root", default=".")
 
     args = parser.parse_args(argv)
     source = Path(getattr(args, "source_root", ".")).resolve()
+    if args.cmd == "checksums":
+        if args.verify:
+            errors = verify_checksums(source)
+            if errors:
+                print(json.dumps({"mismatched": errors}))
+                return 1
+            print(json.dumps({"ok": True}))
+            return 0
+        print(write_checksums(source))
+        return 0
+    if args.cmd == "support-bundle":
+        print(write_support_bundle(Path(args.dest), source))
+        return 0
     prefix = Path(args.prefix)
     if args.cmd == "plan":
         print(json.dumps(plan(source, prefix), indent=2))

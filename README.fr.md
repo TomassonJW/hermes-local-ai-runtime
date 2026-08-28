@@ -2,7 +2,10 @@
 
 Un runtime local, sobre en ressources et piloté par capacités pour Hermes et les autres applications.
 
-> **État :** bootstrap produit et ingénierie `0.1.0`. Le runtime n’est pas encore implémenté. Ce dépôt est l’autorité de développement destinée à être reprise par Hermes.
+> **État :** candidat source public. Baseline produit `0.1.0`, API `0.2.0-dev`.
+> Un noyau de jobs en loopback et un installateur préfixe existent. Ce n'est
+> **pas** un programme du quotidien, **pas** un support production, et **pas**
+> un substitut aux grands modèles cloud.
 
 Hermes Local AI Runtime doit devenir le noyau IA local partagé de l’environnement Hermes : un seul service où les logiciels peuvent demander de l’OCR, de la compréhension documentaire, de l’extraction structurée, des embeddings, du reranking, de la vision générale, de l’analyse d’objets ou d’images et de la transcription audio — puis, plus tard, des modèles de langage plus importants.
 

@@ -25,3 +25,5 @@ jobs:
         run: python scripts/validate_bootstrap.py
       - name: Run tests
         run: pytest
+      - name: Verify release checksums
+        run: python -m installkit checksums --verify

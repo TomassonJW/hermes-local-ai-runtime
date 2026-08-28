@@ -11,6 +11,8 @@ Hermes Local AI Runtime is internal-first and public by design. Contributions ar
 5. State the capability, target profile, evidence, and rollback.
 6. Avoid adding a dependency only because it is popular; compare operational cost and licence.
 
+See `RELEASE.md` for source checksums. Do not attach model weights or secrets.
+
 ## Pull request evidence
 
 A pull request should include problem and non-goals, affected capability and contracts, tests, target hardware profile, measured quality/latency/memory/CPU when relevant, licence and provenance changes, and rollback.

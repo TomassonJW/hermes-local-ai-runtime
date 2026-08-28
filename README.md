@@ -2,7 +2,10 @@
 
 A local-first, resource-aware AI capability runtime for Hermes and other applications.
 
-> **Status:** product and engineering bootstrap `0.1.0`. The runtime is not implemented yet. This repository is the development authority that Hermes will take over.
+> **Status:** public source candidate. Product baseline `0.1.0`, API/job-core
+> `0.2.0-dev`. A loopback job core and prefix installer exist. This is **not**
+> a daily-use program, **not** production-supported, and **not** a substitute
+> for large cloud models.
 
 Hermes Local AI Runtime is intended to become the shared local AI kernel for a Hermes environment: one stable place where applications can request OCR, document understanding, structured extraction, embeddings, reranking, general vision, object and image analysis, speech recognition, and—later—larger local language models.
 
@@ -84,7 +87,9 @@ Agents and contributors must read in this order:
 6. [`STATE.md`](STATE.md)
 7. [`HANDOFF.md`](HANDOFF.md)
 
-The first implementation lot is **UI-00**, a truthful operations shell with simulated data only. It must stop for Thomas's visible-product verdict before runtime backend work begins. Technical read-only probes and benchmark planning may be prepared during preflight, but no permanent service or host mutation is authorised by the bootstrap alone.
+The first visible UI lot was **UI-00**, a truthful operations shell with
+simulated data. Runtime lots G-05 to G-10 exist on loopback. There is no
+permanent service and no live operations UI.
 
 ## Language
 

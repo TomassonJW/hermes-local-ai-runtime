@@ -55,6 +55,8 @@ REQUIRED_FILES = {
     "ui/LOCAL-UI-CONTRACT.md",
     "ui/UI-00-ACCEPTANCE.md",
     "integration/hermes/skill/hermes-local-ai-runtime/SKILL.md",
+    "RELEASE.md",
+    "docs/support-matrix.md",
 }
 
 MODEL_EXTENSIONS = {".gguf", ".safetensors", ".onnx", ".pt", ".pth"}
