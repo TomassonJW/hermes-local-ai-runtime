@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-08-28 16:10 CEST
+Last updated: 2026-08-28 23:10 CEST
 
 ## Why this file exists
 
@@ -41,8 +41,17 @@ No gated lot here. UI-01 cockpit was used live.
 
 1. Read `AGENTS.md`, `STATE.md`, this file, `GATES.md`.
 2. Confirm `127.0.0.1:8830/healthz` is ok before claiming the console is down.
-3. Restart with `HERMES_LOCAL_AI_SERVE_UI=1 python3 -m runtime --config state/ui01-runtime.yaml` plus llama-swap on 8840.
+3. Confirm `127.0.0.1:8840/v1/models` is ok. When llama-swap is down, the four
+   model-backed routes (`text.generate/balanced`, `text.embed`,
+   `search.rerank`, `vision.analyze`) fail while the rest still answer.
+4. Restart the control plane with
+   `HERMES_LOCAL_AI_SERVE_UI=1 python3 -m runtime --config state/ui01-runtime.yaml`.
+   The auth token is resolved from `state/ui01.token` when the environment has
+   none, so no secret needs exporting by hand.
+5. Restart llama-swap with
+   `spike-g03/bin/llama-swap --config spike-g03/llama-swap-config.yaml --listen 127.0.0.1:8840`.
 
 ## Evidence
 
 - UI-01: `operations/UI01-LIVE-CONSOLE-2026-08-28.md`
+- UI-01 live defects and their fixes: `operations/UI01-DEFECTS-2026-08-28.md`
