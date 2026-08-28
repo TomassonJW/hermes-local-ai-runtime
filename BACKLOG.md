@@ -2,7 +2,10 @@
 
 Only the active slice is executable. Later slices are ordered hypotheses, not commitments.
 
-## Active — Hermes takeover and read-only preflight
+## Closed — Takeover, UI-00, engine, G-05
+
+G-00 through G-05 and UI-00 are closed on `main` (`2da6365`). Do not re-open
+them without a new defect. Hub top-bar shortcut is in HermesHub `a7cd8dc`.
 
 - [x] Shared capability-kernel boundary.
 - [x] Actual VM profile separated from host capacity.
@@ -18,6 +21,11 @@ Only the active slice is executable. Later slices are ordered hypotheses, not co
 - [x] Hermes produces the requirement-to-file coverage map.
 - [x] Hermes refreshes the VM profile read-only and redacted.
 - [x] Hermes updates state/handoff without installing anything.
+
+## Next executable — G-06 (waiting for explicit GO)
+
+- [ ] Vision and documents (`missions/04-vision-and-document-capabilities.md`).
+- [ ] Do not start without Thomas's explicit lot decision.
 
 ## Next executable — UI-00
 
