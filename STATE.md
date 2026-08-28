@@ -12,8 +12,8 @@ UI-00 remains accepted simulated shell. No permanent runtime deployment.
 - Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0`.
 - Operational owner: Hermes (canonical productions clone on the Hermes VM).
-- Current `main`: pending G-09 commit.
-- G-05 `952614e`; G-06 `faa6dac`; G-07 `fb4e059`; G-08 `3f496c9`.
+- Current `main`: `f100d3b`.
+- G-05 `952614e`; G-06 `faa6dac`; G-07 `fb4e059`; G-08 `3f496c9`; G-09 `f100d3b`.
 - G-09 source: `installkit/`, `packaging/matrix.yaml`.
   Evidence: `operations/G09-PACKAGING-2026-08-28.md`.
 - Permanent installation, Hermes config changes, live UI-01, production
