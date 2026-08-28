@@ -1,0 +1,70 @@
+schema_version: 1
+updated_at: "2026-08-28"
+notice: >
+  Coverage is per task family, never a single "vision supported" badge.
+  Approved means the local route passed the synthetic public suite on this
+  hardware profile. It is not a production promotion and not a private-corpus
+  claim. UI-00 remains a simulated console; this registry is the live truth.
+
+hardware_profile: hermes-cpu-8vcpu-16gib
+evidence: benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md
+paddleocr: not-measured
+private_corpus: not-mounted
+
+families:
+  - id: V-01
+    name: Screenshot description
+    status: approved-synthetic
+    route: vision.analyze / Qwen3-VL-2B via llama.cpp
+    review_required: false
+  - id: V-02
+    name: UI error diagnosis
+    status: approved-synthetic
+    route: vision.analyze / Qwen3-VL-2B via llama.cpp
+    review_required: false
+    note: Auxiliary vision answered the actual question (E42 / disk full), not a caption.
+  - id: V-03
+    name: Fine UI review
+    status: review
+    review_required: true
+    note: Not measured. Expected to expose the gap with frontier systems.
+  - id: V-04
+    name: Document OCR
+    status: approved-synthetic
+    route: document.text_extract (pdftotext) then document.ocr (tesseract fra+eng)
+    review_required: false
+    note: PaddleOCR/PP-OCR was not installed or compared in this lot.
+  - id: V-05
+    name: Document field extraction
+    status: approved-synthetic
+    route: document.extract_structured / native-or-OCR then deterministic schema
+    review_required: false
+    note: French decimal comma parsed as 123.45, not 123450.
+  - id: V-06
+    name: Chart and diagram
+    status: review
+    review_required: true
+    note: Fixture exists; no measured default route.
+  - id: V-07
+    name: Object detection
+    status: approved-synthetic-specialist
+    route: vision.detect_objects / saturated red-blue box detector
+    review_required: true
+    note: Not a general ONNX detector. Real-world objects remain review.
+  - id: V-08
+    name: Image similarity
+    status: approved-near-duplicate
+    route: vision.compare / average hash
+    review_required: true
+    note: Near-duplicate only. Semantic similarity is not approved.
+  - id: V-09
+    name: Multi-image reasoning
+    status: unsupported
+    review_required: true
+    note: Not measured. Abstain.
+  - id: V-10
+    name: Tiny or ambiguous detail
+    status: approved-abstention
+    route: vision.analyze quality gate
+    review_required: true
+    note: Images under 48px on the short side return unsupported instead of guessing.

@@ -4,6 +4,21 @@ All notable changes to Hermes Local AI Runtime will be documented here.
 
 The project follows Semantic Versioning once executable public releases begin. Bootstrap versions describe the product constitution and may change before API stability is declared.
 
+## [Unreleased]
+
+### Added
+
+- G-05 loopback capability/job core (native `/api/v1` plus OpenAI chat adapter);
+- G-06 vision and document workers behind that job core;
+- per-task-family registry (`registry/task-families.yaml`);
+- synthetic public fixture generator for vision/document evaluation.
+
+### Limits
+
+- G-06 is not universal vision. PaddleOCR, private corpora, fine UI review,
+  charts and multi-image reasoning were not measured.
+- No permanent service, live UI-01, or Hermes config mutation.
+
 ## [0.1.0] - 2026-08-27
 
 ### Added

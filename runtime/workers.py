@@ -11,13 +11,17 @@ enforce the route timeout."""
 
 from __future__ import annotations
 
+import base64
 import json
 import time
+from pathlib import Path
 from typing import Any, Protocol
 
 import httpx
 
 from .config import RouteConfig
+from .document import DocumentError, extract_invoice_fields, extract_pdf_text, ocr_file
+from .vision_specialists import assess_image, average_hash, detect_saturated_boxes, similarity
 
 
 class WorkerError(RuntimeError):
@@ -73,6 +77,8 @@ class OpenAIUpstreamWorker:
             return self._embed(route, request)
         if cap == "text.generate":
             return self._generate(route, request)
+        if cap in {"vision.analyze", "vision.extract_structured", "vision.classify"}:
+            return self._vision(route, request)
         raise WorkerError("CAPABILITY_UNAVAILABLE", f"no upstream mapping for {cap}", False)
 
     def _post_json(self, route: RouteConfig, path: str, payload: dict) -> dict:
@@ -186,12 +192,204 @@ class OpenAIUpstreamWorker:
         )
         return {"text": response["choices"][0]["message"]["content"]}
 
+    def _vision(self, route: RouteConfig, request: dict) -> dict:
+        files = request.get("media_files") or []
+        if not files:
+            raise WorkerError("INVALID_INPUT", "image upload is required", False)
+        path = Path(files[0]["path"])
+        header = path.read_bytes()[:5]
+        if header == b"%PDF-":
+            raise WorkerError("INVALID_INPUT", "vision route requires an image, not a PDF", False)
+        quality = assess_image(path)
+        if quality.get("unsupported"):
+            return {
+                "answer": None,
+                "status": "unsupported",
+                "review_required": True,
+                "warnings": quality["warnings"],
+            }
+        question = str((request.get("input") or {}).get("question") or "").strip()
+        if not question:
+            raise WorkerError("INVALID_INPUT", "question is required", False)
+        prompt = (
+            "Answer the user's question about the image. "
+            "Do not give a generic caption. If a detail is unreadable, say so. "
+            f"Question: {question} /no_think"
+        )
+        raw = path.read_bytes()
+        mime = "image/png" if raw.startswith(b"\x89PNG") else "image/jpeg"
+        parts: list[dict[str, Any]] = [
+            {"type": "text", "text": prompt},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+                },
+            },
+        ]
+        payload: dict[str, Any] = {
+            "model": route.upstream_model or "default",
+            "messages": [{"role": "user", "content": parts}],
+            "max_tokens": int((request.get("constraints") or {}).get("max_output_tokens", 512)),
+            "temperature": 0.1,
+        }
+        schema = request.get("output_schema")
+        if route.capability == "vision.extract_structured":
+            if not isinstance(schema, dict):
+                raise WorkerError("INVALID_INPUT", "output_schema is required", False)
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "extraction", "schema": schema, "strict": True},
+            }
+        response = self._post_json(route, "/v1/chat/completions", payload)
+        content = response["choices"][0]["message"]["content"]
+        if route.capability == "vision.extract_structured":
+            try:
+                parsed = json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise WorkerError("OUTPUT_SCHEMA_FAILED", "model output is not JSON", True) from exc
+            return {"data": parsed, "review_required": False, "warnings": []}
+        return {
+            "answer": content,
+            "status": "answered",
+            "review_required": False,
+            "warnings": [],
+        }
+
+
+def _media_path(request: dict) -> Path:
+    files = request.get("media_files") or []
+    if not files:
+        raise WorkerError("INVALID_INPUT", "upload_id is required", False)
+    return Path(files[0]["path"])
+
+
+def _wrap_document(exc: DocumentError) -> WorkerError:
+    return WorkerError(exc.code, exc.message, False)
+
+
+class DocumentNativeWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        try:
+            return extract_pdf_text(_media_path(request))
+        except DocumentError as exc:
+            raise _wrap_document(exc) from exc
+
+
+class DocumentOcrWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        try:
+            return ocr_file(_media_path(request))
+        except DocumentError as exc:
+            raise _wrap_document(exc) from exc
+
+
+class DocumentParseWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        try:
+            ocr = ocr_file(_media_path(request))
+        except DocumentError as exc:
+            raise _wrap_document(exc) from exc
+        return {
+            "pages": ocr["pages"],
+            "regions": ocr["regions"],
+            "reading_order": [region["text"] for region in ocr["regions"]],
+            "engine": ocr["engine"],
+            "review_required": ocr["review_required"],
+            "warnings": ocr["warnings"],
+        }
+
+
+class DocumentStructuredWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        path = _media_path(request)
+        try:
+            header = path.read_bytes()[:5]
+            if header == b"%PDF-":
+                native = extract_pdf_text(path)
+                text = native["pages"][0]["text"]
+                warnings = list(native["warnings"])
+                review = bool(native["review_required"])
+                if native["image_only"]:
+                    ocr = ocr_file(path)
+                    text = ocr["text"]
+                    warnings.extend(ocr["warnings"])
+                    review = review or ocr["review_required"]
+            else:
+                ocr = ocr_file(path)
+                text = ocr["text"]
+                warnings = list(ocr["warnings"])
+                review = bool(ocr["review_required"])
+        except DocumentError as exc:
+            raise _wrap_document(exc) from exc
+        extracted = extract_invoice_fields(text)
+        fields = extracted["fields"]
+        schema = request.get("output_schema")
+        if isinstance(schema, dict):
+            allowed = set((schema.get("properties") or {}).keys())
+            if allowed:
+                fields = {key: value for key, value in fields.items() if key in allowed}
+        return {
+            "data": fields,
+            "missing": extracted["missing"],
+            "review_required": review or extracted["review_required"],
+            "warnings": warnings,
+            "evidence": extracted["evidence"],
+        }
+
+
+class ImageEmbedWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        files = request.get("media_files") or []
+        if len(files) >= 2:
+            return similarity(Path(files[0]["path"]), Path(files[1]["path"]))
+        if not files:
+            raise WorkerError("INVALID_INPUT", "upload_id is required", False)
+        digest = average_hash(Path(files[0]["path"]))
+        return {
+            "hash": digest,
+            "dimensions": 64,
+            "normalisation": "none",
+            "engine": "average-hash",
+            "warnings": [
+                {
+                    "code": "HASH_NOT_SEMANTIC",
+                    "message": "perceptual hash is not a semantic embedding",
+                }
+            ],
+        }
+
+
+class ObjectDetectWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        path = _media_path(request)
+        quality = assess_image(path)
+        if quality.get("unsupported"):
+            return {
+                "objects": [],
+                "review_required": True,
+                "warnings": quality["warnings"],
+            }
+        return detect_saturated_boxes(path)
+
 
 def build_worker(kind: str) -> Worker:
     if kind == "echo":
         return EchoWorker()
     if kind == "openai-upstream":
         return OpenAIUpstreamWorker()
+    if kind == "document-native":
+        return DocumentNativeWorker()
+    if kind == "document-ocr":
+        return DocumentOcrWorker()
+    if kind == "document-parse":
+        return DocumentParseWorker()
+    if kind == "document-structured":
+        return DocumentStructuredWorker()
+    if kind == "image-embed":
+        return ImageEmbedWorker()
+    if kind == "object-detect":
+        return ObjectDetectWorker()
     raise ValueError(f"unknown worker kind: {kind}")
 
 

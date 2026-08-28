@@ -63,3 +63,4 @@ Thumbs.db
 benchmarks/results/*
 !benchmarks/results/.gitkeep
 !benchmarks/results/G[0-9][0-9]-*.md
+benchmarks/synthetic/generated/

@@ -4,6 +4,7 @@ notice: >
   Candidates are not installed, benchmarked, approved, or bundled. Exact
   revisions, files, hashes, and engine compatibility are installation records.
   G-03 spike measurements: benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md.
+  G-06 task families: benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md.
 
 engines:
   - id: llama-cpp
@@ -65,6 +66,18 @@ engines:
       - document_layout
       - document_parsing
     required_gate: G-06
+    note: Not installed or measured in the G-06 lot. Tesseract is the measured OCR route.
+
+  - id: tesseract
+    status: benchmarked
+    source: https://github.com/tesseract-ocr/tesseract
+    license: Apache-2.0
+    spike_evidence:
+      version: 5.3.4
+      report: benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md
+    roles:
+      - ocr
+    required_gate: G-06
 
   - id: whisper-cpp
     status: candidate
@@ -76,7 +89,7 @@ engines:
 
 model_families:
   - id: qwen3-vl-2b-instruct-gguf
-    status: compatible
+    status: benchmarked
     source:
       repository: Qwen/Qwen3-VL-2B-Instruct-GGUF
       official: true
@@ -90,19 +103,15 @@ model_families:
       - text.generate@1
     target_profiles:
       - hermes-cpu-8vcpu-16gib
-    candidate_artifacts:
-      language_model_quantization: Q4_K_M
-      vision_projector_quantization: Q8_0_or_measured_alternative
-    strengths_to_test:
-      - multilingual OCR and image understanding
-      - structured output
-      - Hermes auxiliary vision
+    spike_evidence:
+      report: benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md
+      families: [V-01, V-02]
     limitations_to_test:
       - cold start and CPU latency
       - tiny text
       - multi-image reasoning
+      - fine UI review
       - KV Q4 quality regression
-      - llama.cpp version compatibility
 
   - id: lfm2.5-vl-1.6b
     status: discovered

@@ -1,22 +1,21 @@
 # Synthetic evaluation fixtures
 
-This directory will contain generated public-safe fixtures for:
+Generator: `benchmarks/synthetic/generate.py`.
+
+Public-safe generated cases for:
 
 - JSON schema extraction;
-- French text and number formats;
-- OCR with controlled degradation;
-- generic administrative document layouts;
-- UI screenshots with fictional data;
-- object/image tests with openly licensed or generated media;
-- speech generated or recorded specifically for public testing.
+- French text and number formats (`SYN-0042`, `123,45 EUR`);
+- OCR with a clean invoice image and an image-only PDF;
+- UI screenshot with fictional error `E42`;
+- tiny unreadable crop;
+- synthetic object/image tests (red/blue boxes, near-duplicate, checkerboard).
 
 Rules:
 
-- no real company invoice template copied without permission;
+- no real company invoice template;
 - no real addresses, IBANs, account numbers, signatures, or personal identities;
-- no private screenshot merely blurred;
-- fixture generator and expected output versioned together;
-- licences and generation provenance recorded;
-- hard cases should test abstention, not only success.
+- generator and expected fields versioned together;
+- hard cases test abstention, not only success.
 
-No fixtures are included in the bootstrap commit because their generation and review are an implementation mission.
+Generated binaries stay local (`benchmarks/synthetic/generated/`, gitignored).

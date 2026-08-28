@@ -17,6 +17,8 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+      - name: Install document tools
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-fra poppler-utils fonts-dejavu-core
       - name: Install validation dependencies
         run: python -m pip install -r requirements-dev.txt
       - name: Validate bootstrap

@@ -11,6 +11,7 @@ Current accepted bootstrap decisions:
 - resource-bounded CPU-first profile;
 - model-agnostic consumers;
 - Apache License 2.0 for original repository work;
-- local-first vision with explicit quality/fallback policy.
+- local-first vision with explicit quality/fallback policy;
+- G-06 vision/document workers reuse the G-05 job core (ADR-0010).
 
 A decision becomes active only when its ADR status is `Accepted` or when this repository's product constitution explicitly makes it non-negotiable.

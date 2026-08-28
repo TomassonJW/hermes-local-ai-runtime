@@ -92,7 +92,16 @@ def load_config(path: str | Path) -> RuntimeConfig:
     routes = []
     for r in raw.get("routes", []):
         worker = r["worker"]
-        if worker not in {"echo", "openai-upstream"}:
+        if worker not in {
+            "echo",
+            "openai-upstream",
+            "document-native",
+            "document-ocr",
+            "document-parse",
+            "document-structured",
+            "image-embed",
+            "object-detect",
+        }:
             raise ConfigError(f"unsupported worker kind: {worker}")
         upstream_base = r.get("upstream_base")
         if worker == "openai-upstream":

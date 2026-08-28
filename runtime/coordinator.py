@@ -10,12 +10,35 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
+from pathlib import Path
 
 from . import RUNTIME_VERSION
 from .admission import Admission
 from .config import RouteConfig, RuntimeConfig
+from .media import (
+    InvalidJobInput,
+    cleanup as cleanup_job_media,
+    collect_upload_ids,
+    materialize,
+    reject_path_keys,
+    validate_upload_ids,
+)
 from .store import IdempotencyConflict, JobRow, JobStore
 from .workers import WorkerError, run_worker_process, validate_against_schema
+
+MEDIA_WORKERS = {
+    "document-native",
+    "document-ocr",
+    "document-parse",
+    "document-structured",
+    "image-embed",
+    "object-detect",
+}
+VISION_QUESTION_CAPABILITIES = {
+    "vision.analyze",
+    "vision.extract_structured",
+    "vision.classify",
+}
 
 
 @dataclass(frozen=True)
@@ -25,10 +48,17 @@ class Submission:
 
 
 class JobCoordinator:
-    def __init__(self, config: RuntimeConfig, store: JobStore):
+    def __init__(
+        self,
+        config: RuntimeConfig,
+        store: JobStore,
+        media_store: dict[str, bytes] | None = None,
+    ):
         self.config = config
         self.store = store
         self.admission = Admission(config.budget)
+        self._media_store = media_store if media_store is not None else {}
+        self._media_root = Path(config.db_path).resolve().parent / ".runtime-media"
         self._queue: queue.Queue[str | None] = queue.Queue(maxsize=config.budget.queue_max)
         self._stop = threading.Event()
         self._threads: list[threading.Thread] = []
@@ -92,6 +122,7 @@ class JobCoordinator:
         canonical = json.dumps(request, sort_keys=True, separators=(",", ":")).encode()
         if len(canonical) > self.config.budget.request_max_bytes:
             raise InputTooLarge("request exceeds the byte limit")
+        self._validate_media(route, request)
         request_hash = hashlib.sha256(canonical).hexdigest()
 
         decision = self.admission.try_enqueue()
@@ -127,6 +158,26 @@ class JobCoordinator:
             )
             raise QueueFull("queue is full", 10) from exc
         return Submission(job, True)
+
+    def _validate_media(self, route: RouteConfig, request: dict) -> None:
+        inp = request.get("input") or {}
+        if not isinstance(inp, dict):
+            raise InvalidJobInput("input must be an object")
+        needs_media = route.worker in MEDIA_WORKERS or (
+            route.worker == "openai-upstream" and route.capability.startswith("vision.")
+        )
+        if not needs_media:
+            return
+        reject_path_keys(inp)
+        ids = collect_upload_ids(inp)
+        if not ids:
+            raise InvalidJobInput("upload_id is required")
+        if route.capability == "vision.compare" and len(ids) < 2:
+            raise InvalidJobInput("vision.compare requires two images")
+        if route.capability in VISION_QUESTION_CAPABILITIES:
+            if not str(inp.get("question") or "").strip():
+                raise InvalidJobInput("question is required")
+        validate_upload_ids(ids, self._media_store)
 
     def result(self, job_id: str) -> dict | None:
         with self._payload_lock:
@@ -229,7 +280,15 @@ class JobCoordinator:
         queued_ms = max(0, round((time.time() - job.created_at) * 1000))
         self.store.set_status(job_id, "running")
         try:
-            output = self._execute_isolated(route, job, request)
+            exec_request = request
+            ids = collect_upload_ids(request.get("input") or {})
+            if ids:
+                self._media_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+                exec_request = dict(request)
+                exec_request["media_files"] = materialize(
+                    job_id, ids, self._media_store, self._media_root
+                )
+            output = self._execute_isolated(route, job, exec_request)
             inference_ms = round((time.monotonic() - started) * 1000)
             if self.store.cancel_requested(job_id):
                 self.store.set_status(job_id, "cancelled")
@@ -257,11 +316,19 @@ class JobCoordinator:
                         "message": "upstream model load time is included in inference_ms",
                     }
                 )
+            extra_warnings = output.get("warnings") or []
+            if isinstance(extra_warnings, list):
+                for item in extra_warnings:
+                    if isinstance(item, dict) and "code" in item and "message" in item:
+                        warnings.append(item)
+            evidence = output.get("evidence") or []
+            if not isinstance(evidence, list):
+                evidence = []
             immutable_result = {
                 "result": output,
-                "evidence": [],
+                "evidence": evidence,
                 "warnings": warnings,
-                "review_required": False,
+                "review_required": bool(output.get("review_required", False)),
                 "provenance": provenance,
             }
             result_size = len(
@@ -316,6 +383,7 @@ class JobCoordinator:
                 {"total_ms": total_ms},
             )
         finally:
+            cleanup_job_media(job_id, self._media_root)
             with self._payload_lock:
                 self._requests.pop(job_id, None)
             self.admission.release(route)
@@ -434,6 +502,7 @@ class JobCancelled(RuntimeError):
 __all__ = [
     "CapabilityUnavailable",
     "IdempotencyConflict",
+    "InvalidJobInput",
     "JobCoordinator",
     "InputTooLarge",
     "QueueFull",

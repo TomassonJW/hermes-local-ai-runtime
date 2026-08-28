@@ -8,6 +8,7 @@ content is never logged by this module.
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import hmac
 import json
@@ -25,7 +26,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from . import RUNTIME_VERSION
 from .config import RuntimeConfig
-from .coordinator import CapabilityUnavailable, InputTooLarge, JobCoordinator, QueueFull
+from .coordinator import (
+    CapabilityUnavailable,
+    InputTooLarge,
+    InvalidJobInput,
+    JobCoordinator,
+    QueueFull,
+)
 from .store import IdempotencyConflict, JobRow, JobStore
 
 REQUEST_ID: ContextVar[str] = ContextVar("request_id", default="req_unavailable")
@@ -76,11 +83,31 @@ class JobRequest(BaseModel):
     policy: JobPolicy
 
 
+class OpenAITextPart(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["text"]
+    text: str = Field(min_length=1, max_length=200_000)
+
+
+class OpenAIImageUrl(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=8, max_length=6_000_000)
+
+
+class OpenAIImagePart(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["image_url"]
+    image_url: OpenAIImageUrl
+
+
 class OpenAIMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     role: Literal["system", "user", "assistant", "tool"]
-    content: str = Field(max_length=200_000)
+    content: str | list[OpenAITextPart | OpenAIImagePart] = Field(min_length=1)
 
 
 class OpenAIChatRequest(BaseModel):
@@ -133,10 +160,10 @@ def _has_scope(principal: Principal, wanted: str) -> bool:
 
 def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 1024) -> FastAPI:
     store = JobStore(config.db_path)
-    coordinator = JobCoordinator(config, store)
     counters = {"requests": 0, "auth_failures": 0, "uploads": 0}
     upload_lock = threading.Lock()
     uploads: dict[str, bytes] = {}
+    coordinator = JobCoordinator(config, store, media_store=uploads)
     max_upload_store_bytes = max_upload_bytes * 2
     openai_profiles = sorted(
         {
@@ -345,6 +372,8 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
             )
         except InputTooLarge:
             return error_response("INPUT_TOO_LARGE", "request exceeds the byte limit", 413)
+        except InvalidJobInput as exc:
+            return error_response("INVALID_INPUT", str(exc), 400)
         except QueueFull as exc:
             return error_response(
                 "QUEUE_FULL",
@@ -471,39 +500,117 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
             return error_response(
                 "CAPABILITY_UNAVAILABLE", "streaming is not implemented in G-05", 501
             )
-        require_scope(p, "capability:invoke:text")
-        profile = openai_aliases.get(body.model)
-        if profile is None:
-            raise HTTPException(status_code=404, detail="NOT_FOUND")
-        route = config.route_for("text.generate", "1.0.0", profile)
-        if route is None or not route.sync_allowed:
-            return error_response(
-                "CAPABILITY_UNAVAILABLE", "no synchronous text route", 503
-            )
-        prompt = "\n".join(f"{m.role}: {m.content}" for m in body.messages)
-        request_data = {
-            "capability": "text.generate",
-            "capability_version": "1.0.0",
-            "profile": profile,
-            "input": {"text": body.messages[-1].content, "prompt": prompt},
-            "constraints": {
-                "timeout_ms": route.timeout_ms,
-                "max_output_tokens": body.max_tokens,
-                "priority": "interactive",
-                "allow_degraded_route": False,
-            },
-            "policy": {
-                "data_classification": "internal",
-                "cloud_fallback_allowed": False,
-                "retention": "none",
-            },
-        }
+        vision_profile = {
+            "hlair/vision-balanced": "balanced",
+            "hlair/vision-fast": "fast",
+            "hlair/vision-accurate": "accurate",
+            "local-vision": "balanced",
+        }.get(body.model)
+        if vision_profile is not None:
+            require_scope(p, "capability:invoke:vision")
+            texts: list[str] = []
+            upload_ids: list[str] = []
+            for message in body.messages:
+                if isinstance(message.content, str):
+                    texts.append(message.content)
+                    continue
+                for part in message.content:
+                    if isinstance(part, OpenAITextPart):
+                        texts.append(part.text)
+                    else:
+                        url = part.image_url.url
+                        if not url.startswith("data:") or "," not in url:
+                            return error_response(
+                                "INVALID_INPUT", "only data: image URLs are accepted", 400
+                            )
+                        header, payload = url.split(",", 1)
+                        if ";base64" not in header:
+                            return error_response(
+                                "INVALID_INPUT", "image URL must be base64", 400
+                            )
+                        try:
+                            raw = base64.b64decode(payload, validate=True)
+                        except Exception:
+                            return error_response("INVALID_INPUT", "invalid image data", 400)
+                        if len(raw) > max_upload_bytes:
+                            return error_response(
+                                "INPUT_TOO_LARGE", "upload exceeds the byte limit", 413
+                            )
+                        upload_id = f"upl_{uuid.uuid4().hex[:20]}"
+                        with upload_lock:
+                            uploads[upload_id] = raw
+                        upload_ids.append(upload_id)
+            question = "\n".join(texts).strip()
+            if not question:
+                return error_response("INVALID_INPUT", "question is required", 400)
+            if not upload_ids:
+                return error_response("INVALID_INPUT", "image is required", 400)
+            route = config.route_for("vision.analyze", "1.0.0", vision_profile)
+            if route is None or not route.sync_allowed:
+                return error_response(
+                    "CAPABILITY_UNAVAILABLE", "no synchronous vision route", 503
+                )
+            request_data = {
+                "capability": "vision.analyze",
+                "capability_version": "1.0.0",
+                "profile": vision_profile,
+                "input": {
+                    "question": question,
+                    "upload_id": upload_ids[0],
+                    "images": [{"upload_id": item} for item in upload_ids],
+                },
+                "constraints": {
+                    "timeout_ms": route.timeout_ms,
+                    "max_output_tokens": body.max_tokens,
+                    "priority": "interactive",
+                    "allow_degraded_route": False,
+                },
+                "policy": {
+                    "data_classification": "internal",
+                    "cloud_fallback_allowed": False,
+                    "retention": "none",
+                },
+            }
+        else:
+            require_scope(p, "capability:invoke:text")
+            profile = openai_aliases.get(body.model)
+            if profile is None:
+                raise HTTPException(status_code=404, detail="NOT_FOUND")
+            if any(not isinstance(message.content, str) for message in body.messages):
+                return error_response(
+                    "INVALID_INPUT", "text aliases accept string content only", 400
+                )
+            route = config.route_for("text.generate", "1.0.0", profile)
+            if route is None or not route.sync_allowed:
+                return error_response(
+                    "CAPABILITY_UNAVAILABLE", "no synchronous text route", 503
+                )
+            prompt = "\n".join(f"{m.role}: {m.content}" for m in body.messages)
+            request_data = {
+                "capability": "text.generate",
+                "capability_version": "1.0.0",
+                "profile": profile,
+                "input": {"text": body.messages[-1].content, "prompt": prompt},
+                "constraints": {
+                    "timeout_ms": route.timeout_ms,
+                    "max_output_tokens": body.max_tokens,
+                    "priority": "interactive",
+                    "allow_degraded_route": False,
+                },
+                "policy": {
+                    "data_classification": "internal",
+                    "cloud_fallback_allowed": False,
+                    "retention": "none",
+                },
+            }
         try:
             submission = coordinator.submit(p.name, request_data, None)
         except CapabilityUnavailable:
             return error_response(
-                "CAPABILITY_UNAVAILABLE", "no approved text route", 503
+                "CAPABILITY_UNAVAILABLE", "no approved route", 503
             )
+        except InvalidJobInput as exc:
+            return error_response("INVALID_INPUT", str(exc), 400)
         except QueueFull as exc:
             return error_response(
                 "QUEUE_FULL",
@@ -530,7 +637,11 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                 retryable=bool(err.get("retryable")),
             )
         output = result["result"]
-        content = output.get("text", output.get("echo", json.dumps(output)))
+        content = output.get(
+            "answer", output.get("text", output.get("echo", json.dumps(output)))
+        )
+        if not isinstance(content, str):
+            content = json.dumps(content)
         created = int(time.time())
         return JSONResponse(
             {
@@ -553,13 +664,22 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
     @app.get("/v1/models")
     async def openai_models(p: Principal = Depends(principal)) -> dict:
         require_scope(p, "system:read")
-        return {
-            "object": "list",
-            "data": [
-                {"id": f"local-{profile}", "object": "model", "owned_by": "local-runtime"}
-                for profile in openai_profiles
-            ],
-        }
+        models = [
+            {"id": f"local-{profile}", "object": "model", "owned_by": "local-runtime"}
+            for profile in openai_profiles
+        ]
+        if any(
+            route.capability == "vision.analyze" and route.sync_allowed
+            for route in config.routes
+        ):
+            models.append(
+                {
+                    "id": "hlair/vision-balanced",
+                    "object": "model",
+                    "owned_by": "local-runtime",
+                }
+            )
+        return {"object": "list", "data": models}
 
     return app
 
