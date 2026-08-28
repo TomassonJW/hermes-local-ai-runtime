@@ -13,7 +13,9 @@ program yet.
 - Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0`.
 - Operational owner: Hermes (canonical productions clone on the Hermes VM).
+- Current `main`: `faa6dac860973bad7fd884924a318541fef59d92`.
 - G-05 delivery: `952614e`; hardening: `2da6365`; Hub shortcut: HermesHub `a7cd8dc`.
+- G-06 delivery: `faa6dac`.
 - G-06 source: `runtime/` document and vision workers; evidence:
   `operations/G06-VISION-DOCUMENTS-2026-08-28.md` and
   `benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md`.
