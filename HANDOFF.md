@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-08-28 15:30 CEST
+Last updated: 2026-08-28 16:10 CEST
 
 ## Why this file exists
 
@@ -29,11 +29,13 @@ the private Tailscale path, write consumer data, or change Hermes
 - Live UI + API on `127.0.0.1:8830`
 - llama-swap on `127.0.0.1:8840`
 - Hub path `/apps/local-ai-runtime/`
+- Hermes skill `hermes-local-ai-runtime` in the default profile
 - Spike-g03 binaries and weights outside Git
 
 ## Next lot
 
-Wait for Thomas's UI-01 verdict. Then Sillage (in the Sillage repo).
+Wait for Sillage (or another app) to load Hermes skill `hermes-local-ai-runtime`.
+No gated lot here. UI-01 cockpit was used live.
 
 ## Resume checklist
 
