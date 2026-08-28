@@ -6,3 +6,4 @@ PyYAML==6.0.3
 jsonschema==4.25.1
 pytest==8.4.2
 pillow==11.3.0
+python-multipart==0.0.32

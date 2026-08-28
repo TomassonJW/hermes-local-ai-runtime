@@ -12,5 +12,6 @@ Pinned Python components (see `installkit/kit.py`):
 - jsonschema 4.25.1 MIT
 - pytest 8.4.2 MIT
 - pillow 11.3.0 HPND
+- python-multipart 0.0.32 Apache-2.0
 
 Engine binaries and model weights keep their own licences and are not bundled.

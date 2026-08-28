@@ -39,6 +39,7 @@ PINNED_LICENSES = {
     "jsonschema": ("4.25.1", "MIT"),
     "pytest": ("8.4.2", "MIT"),
     "pillow": ("11.3.0", "HPND"),
+    "python-multipart": ("0.0.32", "Apache-2.0"),
 }
 
 COPY_TREES = ("runtime", "contracts", "schemas")
