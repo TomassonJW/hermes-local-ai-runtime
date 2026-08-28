@@ -80,3 +80,21 @@ families:
     route: search.rerank / Qwen3-Reranker-0.6B via llama.cpp
     review_required: false
     note: Max 100 candidates. Invoice family ranked first; English invoice beat French.
+  - id: A-01
+    name: Batch French transcription
+    status: approved-synthetic
+    route: audio.transcribe / whisper.cpp base
+    review_required: true
+    note: espeak fixture recovered facture, not SYN-0042. Identifier quality not claimed.
+  - id: A-02
+    name: Silence abstention
+    status: approved-abstention
+    route: audio.transcribe quality gate
+    review_required: false
+    note: No-speech energy returns unsupported with empty text.
+  - id: A-03
+    name: Streaming transcription
+    status: unsupported
+    route: planned
+    review_required: true
+    note: Batch jobs only. Streaming is not implemented.

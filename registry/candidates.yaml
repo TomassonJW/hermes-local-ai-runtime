@@ -6,6 +6,7 @@ notice: >
   G-03 spike measurements: benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md.
   G-06 task families: benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md.
   G-07 embeddings/rerank: benchmarks/results/G07-EMBEDDINGS-RERANK-2026-08-28.md.
+  G-08 audio: benchmarks/results/G08-AUDIO-2026-08-28.md.
 
 engines:
   - id: llama-cpp
@@ -81,7 +82,7 @@ engines:
     required_gate: G-06
 
   - id: whisper-cpp
-    status: candidate
+    status: benchmarked
     source: https://github.com/ggml-org/whisper.cpp
     license: MIT
     roles:

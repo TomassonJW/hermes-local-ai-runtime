@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from typing import Annotated, Any, Literal
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -192,16 +192,19 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
     openai_aliases = {f"local-{profile}": profile for profile in openai_profiles}
     embed_aliases: dict[str, str] = {}
     rerank_aliases: dict[str, str] = {}
+    transcribe_aliases: dict[str, str] = {}
     for route in config.routes:
-        if not route.sync_allowed:
-            continue
         for profile in route.profiles:
-            if route.capability == "text.embed":
-                embed_aliases[f"hlair/embed-{profile}"] = profile
-                embed_aliases[f"local-embed-{profile}"] = profile
-            if route.capability == "search.rerank":
-                rerank_aliases[f"hlair/rerank-{profile}"] = profile
-                rerank_aliases[f"local-rerank-{profile}"] = profile
+            if route.sync_allowed:
+                if route.capability == "text.embed":
+                    embed_aliases[f"hlair/embed-{profile}"] = profile
+                    embed_aliases[f"local-embed-{profile}"] = profile
+                if route.capability == "search.rerank":
+                    rerank_aliases[f"hlair/rerank-{profile}"] = profile
+                    rerank_aliases[f"local-rerank-{profile}"] = profile
+            if route.capability == "audio.transcribe":
+                transcribe_aliases[f"hlair/transcribe-{profile}"] = profile
+                transcribe_aliases[f"local-transcribe-{profile}"] = profile
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -707,7 +710,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                     "owned_by": "local-runtime",
                 }
             )
-        for alias in sorted(set(embed_aliases) | set(rerank_aliases)):
+        for alias in sorted(set(embed_aliases) | set(rerank_aliases) | set(transcribe_aliases)):
             models.append({"id": alias, "object": "model", "owned_by": "local-runtime"})
         return {"object": "list", "data": models}
 
@@ -866,6 +869,85 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                     }
                     for item in result["result"]["candidates"]
                 ],
+                "hermes_provenance": result["provenance"],
+            }
+        )
+
+    @app.post("/v1/audio/transcriptions")
+    async def openai_transcriptions(
+        p: Principal = Depends(principal),
+        file: UploadFile = File(...),
+        model: str = Form(...),
+        language: str | None = Form(None),
+    ):
+        require_scope(p, "capability:invoke:audio")
+        profile = transcribe_aliases.get(model)
+        if profile is None:
+            raise HTTPException(status_code=404, detail="NOT_FOUND")
+        route = config.route_for("audio.transcribe", "1.0.0", profile)
+        if route is None:
+            return error_response("CAPABILITY_UNAVAILABLE", "no transcription route", 503)
+        raw = await file.read()
+        if len(raw) > max_upload_bytes:
+            return error_response("INPUT_TOO_LARGE", "upload exceeds the byte limit", 413)
+        upload_id = f"upl_{uuid.uuid4().hex[:20]}"
+        with upload_lock:
+            uploads[upload_id] = raw
+        request_data = {
+            "capability": "audio.transcribe",
+            "capability_version": "1.0.0",
+            "profile": profile,
+            "input": {"upload_id": upload_id, "language": language or "auto"},
+            "constraints": {
+                "timeout_ms": route.timeout_ms,
+                "priority": "batch",
+                "allow_degraded_route": False,
+            },
+            "policy": {
+                "data_classification": "internal",
+                "cloud_fallback_allowed": False,
+                "retention": "none",
+            },
+        }
+        try:
+            submission = coordinator.submit(p.name, request_data, None)
+        except CapabilityUnavailable:
+            return error_response("CAPABILITY_UNAVAILABLE", "no approved route", 503)
+        except InvalidJobInput as exc:
+            return error_response("INVALID_INPUT", str(exc), 400)
+        except QueueFull as exc:
+            return error_response(
+                "QUEUE_FULL",
+                str(exc),
+                429,
+                retryable=True,
+                retry_after_seconds=exc.retry_after_seconds,
+            )
+        job = await asyncio.to_thread(
+            coordinator.wait,
+            submission.job.job_id,
+            route.timeout_ms / 1000 + 1,
+        )
+        if job is None or job.status not in {"succeeded", "failed", "rejected", "cancelled"}:
+            store.request_cancel(submission.job.job_id)
+            return error_response("TIMEOUT", "job did not complete in time", 504, retryable=True)
+        result = coordinator.result(job.job_id)
+        if job.status != "succeeded" or result is None:
+            err = job.error or {"code": "INTERNAL_ERROR", "message": "job failed"}
+            return error_response(
+                err["code"],
+                err["message"],
+                ERROR_HTTP_STATUS.get(err["code"], 500),
+                retryable=bool(err.get("retryable")),
+            )
+        output = result["result"]
+        return JSONResponse(
+            {
+                "text": output.get("text") or "",
+                "model": model,
+                "language": output.get("language"),
+                "duration": output.get("duration_s"),
+                "segments": output.get("segments") or [],
                 "hermes_provenance": result["provenance"],
             }
         )

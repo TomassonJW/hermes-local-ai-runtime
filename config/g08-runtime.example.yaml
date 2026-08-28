@@ -1,0 +1,52 @@
+# G-08 loopback configuration example.
+# Copy outside Git. Tokens and whisper paths stay in the environment.
+listen:
+  host: 127.0.0.1
+  port: 8850
+
+db_path: ./state/g08-runtime.db
+dev_mode: false
+
+auth:
+  tokens:
+    - name: local-consumer
+      token_env: HERMES_LOCAL_AI_TOKEN
+      scopes:
+        - capability:invoke:*
+        - job:read:self
+        - job:cancel:self
+        - system:read
+
+budget:
+  heavy_slots: 1
+  light_slots: 2
+  queue_max: 8
+  memory_floor_available_mib: 4096
+  hard_memory_mib: 10240
+
+routes:
+  - id: audio-transcribe-fast@2026-08
+    capability: audio.transcribe
+    capability_version: 1.0.0
+    profiles: [fast]
+    worker: whisper-cpp
+    engine: whisper.cpp
+    engine_version: b4938
+    resource_class: medium
+    memory_estimate_mib: 512
+    sync_allowed: true
+    timeout_ms: 180000
+    preset: whisper-cpu-baseline-v1
+
+  - id: audio-transcribe-balanced@2026-08
+    capability: audio.transcribe
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: whisper-cpp
+    engine: whisper.cpp
+    engine_version: b4938
+    resource_class: heavy
+    memory_estimate_mib: 1024
+    sync_allowed: true
+    timeout_ms: 180000
+    preset: whisper-cpu-baseline-v1

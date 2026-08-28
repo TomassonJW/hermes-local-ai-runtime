@@ -298,7 +298,7 @@ paths:
         "200": {description: Ordered candidates}
   /v1/audio/transcriptions:
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented-g08
       operationId: transcribeAudio
       requestBody:
         required: true

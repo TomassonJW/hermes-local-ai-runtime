@@ -13,6 +13,7 @@ Current accepted bootstrap decisions:
 - Apache License 2.0 for original repository work;
 - local-first vision with explicit quality/fallback policy;
 - G-06 vision/document workers reuse the G-05 job core (ADR-0010);
-- G-07 embeddings and rerank are computation, not a vector DB (ADR-0011).
+- G-07 embeddings and rerank are computation, not a vector DB (ADR-0011);
+- G-08 audio is batch whisper.cpp, not streaming (ADR-0012).
 
 A decision becomes active only when its ADR status is `Accepted` or when this repository's product constitution explicitly makes it non-negotiable.

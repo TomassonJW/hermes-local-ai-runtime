@@ -981,7 +981,8 @@ def test_exposed_routes_equal_openapi_routes_marked_implemented(tmp_path: Path):
         for path, path_item in contract["paths"].items()
         for method, operation in path_item.items()
         if isinstance(operation, dict)
-        and operation.get("x-implementation-status") in {"implemented-g05", "implemented-g07"}
+        and operation.get("x-implementation-status")
+        in {"implemented-g05", "implemented-g07", "implemented-g08"}
     }
     assert exposed == implemented
 

@@ -34,6 +34,7 @@ MEDIA_WORKERS = {
     "document-structured",
     "image-embed",
     "object-detect",
+    "whisper-cpp",
 }
 VISION_QUESTION_CAPABILITIES = {
     "vision.analyze",

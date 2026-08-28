@@ -13,12 +13,14 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import time
 from pathlib import Path
 from typing import Any, Protocol
 
 import httpx
 
+from .audio import AudioError, transcribe_file
 from .config import RouteConfig
 from .document import DocumentError, extract_invoice_fields, extract_pdf_text, ocr_file
 from .vectors import (
@@ -448,6 +450,26 @@ class ObjectDetectWorker:
         return detect_saturated_boxes(path)
 
 
+class WhisperCppWorker:
+    def execute(self, route: RouteConfig, request: dict) -> dict:
+        path = _media_path(request)
+        language = str((request.get("input") or {}).get("language") or "auto")
+        cli = route.worker_binary or os.environ.get("HERMES_WHISPER_CLI") or ""
+        model = route.upstream_model or os.environ.get("HERMES_WHISPER_MODEL") or ""
+        try:
+            return transcribe_file(
+                path,
+                cli=cli,
+                model=model,
+                language=language,
+                timeout_s=max(5.0, route.timeout_ms / 1000),
+                workdir=path.parent / "decode",
+            )
+        except AudioError as exc:
+            retryable = exc.code in {"TIMEOUT", "MODEL_LOAD_FAILED"}
+            raise WorkerError(exc.code, str(exc), retryable) from exc
+
+
 def build_worker(kind: str) -> Worker:
     if kind == "echo":
         return EchoWorker()
@@ -465,6 +487,8 @@ def build_worker(kind: str) -> Worker:
         return ImageEmbedWorker()
     if kind == "object-detect":
         return ObjectDetectWorker()
+    if kind == "whisper-cpp":
+        return WhisperCppWorker()
     raise ValueError(f"unknown worker kind: {kind}")
 
 

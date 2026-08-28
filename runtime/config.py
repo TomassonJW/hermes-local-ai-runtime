@@ -32,6 +32,7 @@ class RouteConfig:
     preset: str = "default"
     max_input_chars: int = 32_000
     max_upstream_response_bytes: int = 4 * 1024 * 1024
+    worker_binary: str | None = None
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,7 @@ def load_config(path: str | Path) -> RuntimeConfig:
             "document-structured",
             "image-embed",
             "object-detect",
+            "whisper-cpp",
         }:
             raise ConfigError(f"unsupported worker kind: {worker}")
         upstream_base = r.get("upstream_base")
@@ -137,6 +139,7 @@ def load_config(path: str | Path) -> RuntimeConfig:
                         32 * 1024 * 1024,
                     ),
                 ),
+                worker_binary=r.get("worker_binary") or os.environ.get("HERMES_WHISPER_CLI"),
             )
         )
 

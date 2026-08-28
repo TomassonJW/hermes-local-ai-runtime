@@ -20,7 +20,7 @@ def collect_upload_ids(inp: dict[str, Any]) -> list[str]:
     raw = inp.get("upload_id")
     if isinstance(raw, str):
         found.append(raw)
-    for key in ("images", "pages", "documents"):
+    for key in ("images", "pages", "documents", "audio"):
         items = inp.get(key)
         if not isinstance(items, list):
             continue
@@ -40,7 +40,7 @@ def reject_path_keys(inp: dict[str, Any]) -> None:
     extra = FORBIDDEN_PATH_KEYS.intersection(inp)
     if extra:
         raise InvalidJobInput("filesystem paths are not accepted as job input")
-    for key in ("images", "pages", "documents"):
+    for key in ("images", "pages", "documents", "audio"):
         items = inp.get(key)
         if isinstance(items, list):
             for item in items:
@@ -85,5 +85,10 @@ def cleanup(job_id: str, root: Path) -> None:
     if not job_dir.is_dir():
         return
     for child in job_dir.iterdir():
-        child.unlink(missing_ok=True)
+        if child.is_dir():
+            for nested in child.iterdir():
+                nested.unlink(missing_ok=True)
+            child.rmdir()
+        else:
+            child.unlink(missing_ok=True)
     job_dir.rmdir()
