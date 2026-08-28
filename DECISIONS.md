@@ -18,6 +18,8 @@ Current accepted bootstrap decisions:
 - G-09 is a rootless prefix install; systemd is shipped not enabled (ADR-0013);
 - G-10 consumers speak capabilities, not model files (ADR-0014);
 - G-11 is a public source candidate, not production support (ADR-0015);
-- UI-01 is a live loopback console, not production support (ADR-0016).
+- UI-01 is a live loopback console, not production support (ADR-0016);
+- systemd user services are enabled for the runtime and model router (ADR-0017),
+  superseding the "shipped not enabled" clause of ADR-0013 and ADR-0016.
 
 A decision becomes active only when its ADR status is `Accepted` or when this repository's product constitution explicitly makes it non-negotiable.

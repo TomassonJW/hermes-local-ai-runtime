@@ -3,6 +3,6 @@ arch: x86_64
 status: supported
 notes: Measured on the Hermes CPU VM. Other OS/arch combinations remain unsupported.
 loopback_default: 127.0.0.1
-systemd_user_unit: shipped-not-enabled
+systemd_user_unit: enabled-user-scope-2026-08-28
 proxmox_mutation: forbidden
 model_download: never-during-install

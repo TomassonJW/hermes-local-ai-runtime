@@ -1,0 +1,28 @@
+[Unit]
+Description=Hermes Local AI Runtime - llama-swap model router (loopback)
+After=network.target
+PartOf=hlair.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/hermes-data/users/hermes/productions/hermes-agency/projects/project--2026-08-27--22-29--local-ai--hermes-local-ai-runtime/spike-g03
+ExecStart=/srv/hermes-data/users/hermes/productions/hermes-agency/projects/project--2026-08-27--22-29--local-ai--hermes-local-ai-runtime/spike-g03/bin/llama-swap --config llama-swap-config.yaml --listen 127.0.0.1:8840
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+# Hardening. The router only reads model weights and listens on loopback.
+# ProtectKernelModules is deliberately absent: it needs capability dropping,
+# which a systemd --user manager cannot do (exit 218/CAPABILITIES).
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/hermes-data/users/hermes/productions/hermes-agency/projects/project--2026-08-27--22-29--local-ai--hermes-local-ai-runtime/spike-g03
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=hlair.target

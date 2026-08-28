@@ -1,0 +1,7 @@
+[Unit]
+Description=Hermes Local AI Runtime (loopback console + model router)
+Documentation=man:systemd.special(7)
+Wants=hlair-llama-swap.service hlair-runtime.service
+
+[Install]
+WantedBy=default.target

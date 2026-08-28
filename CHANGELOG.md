@@ -44,7 +44,9 @@ The project follows Semantic Versioning once executable public releases begin. B
 - G-09 does not enable systemd and does not download models.
 - G-10 does not install the Hermes skill live or connect production Sillage.
 - G-11 is a source candidate, not production support.
-- UI-01 is a live loopback console. systemd is not enabled.
+- UI-01 is a live loopback console. systemd user services are enabled since
+  2026-08-28 (ADR-0017); this remains a private loopback deployment, not
+  production support.
 
 ## [0.1.0] - 2026-08-27
 

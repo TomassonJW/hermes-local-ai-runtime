@@ -12,7 +12,9 @@ Scope: public source candidate on loopback. Not a production support statement.
 
 ## Open
 
-- systemd is not enabled; there is no running production identity.
+- systemd user services are enabled since 2026-08-28 (ADR-0017): the runtime and
+  model router run under the `hermes` user on loopback, with crash restart. No
+  system-wide unit, no root, no public listener.
 - Model weights live outside Git and are not promoted.
 - No public listener review (none is shipped).
 - Hermes `config.yaml` is untouched.

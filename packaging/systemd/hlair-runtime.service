@@ -1,0 +1,33 @@
+[Unit]
+Description=Hermes Local AI Runtime - capability controller and console (loopback)
+After=network.target hlair-llama-swap.service
+Wants=hlair-llama-swap.service
+PartOf=hlair.target
+
+[Service]
+Type=simple
+WorkingDirectory=/srv/hermes-data/users/hermes/productions/hermes-agency/projects/project--2026-08-27--22-29--local-ai--hermes-local-ai-runtime/hermes-local-ai-runtime
+Environment=HERMES_LOCAL_AI_SERVE_UI=1
+ExecStart=/srv/hermes-data/users/hermes/productions/hermes-agency/projects/project--2026-08-27--22-29--local-ai--hermes-local-ai-runtime/.venv/bin/python3 -m runtime --config state/ui01-runtime.yaml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+# The auth token is read from state/ui01.token by the runtime itself.
+# It is never passed through the environment or the unit file.
+
+# Hardening. Loopback only; writes confined to the project state directory.
+# ProtectKernelModules is deliberately absent: it needs capability dropping,
+# which a systemd --user manager cannot do (exit 218/CAPABILITIES).
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/srv/hermes-data/users/hermes/productions/hermes-agency/projects/project--2026-08-27--22-29--local-ai--hermes-local-ai-runtime/hermes-local-ai-runtime/state
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=hlair.target

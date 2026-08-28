@@ -13,4 +13,6 @@ python3 -m installkit install --prefix /path/to/prefix
 python3 -m installkit uninstall --prefix /path/to/prefix --purge
 ```
 
-Do not enable the shipped systemd user unit without a later explicit decision.
+The prefix installer's own unit stays shipped-not-enabled. The live UI-01
+deployment instead runs the units in `packaging/systemd/`, enabled under the
+user scope since 2026-08-28 (ADR-0017); see `operations/RUNBOOK-systemd.md`.
