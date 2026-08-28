@@ -169,9 +169,28 @@ def load_config(path: str | Path) -> RuntimeConfig:
     )
 
     tokens: list[TokenConfig] = []
+    config_dir = Path(path).resolve().parent
     for t in raw.get("auth", {}).get("tokens", []):
-        env_name = t["token_env"]
-        value = os.environ.get(env_name, "")
+        value = ""
+        env_name = t.get("token_env")
+        if env_name:
+            value = os.environ.get(env_name, "")
+        # A restart must not depend on the shell that first launched the
+        # runtime. When the environment carries nothing, fall back to an
+        # operator-managed secret file kept outside Git. The file is never
+        # created here and its contents are never logged.
+        if not value and t.get("token_file"):
+            token_path = Path(t["token_file"])
+            if not token_path.is_absolute():
+                token_path = config_dir / token_path
+            if token_path.is_file():
+                mode = token_path.stat().st_mode
+                if mode & 0o077:
+                    raise ConfigError(
+                        f"token file {token_path} is group/world readable; "
+                        "restrict it to owner-only (chmod 600)"
+                    )
+                value = token_path.read_text(encoding="utf-8").strip()
         if value:
             tokens.append(
                 TokenConfig(name=t["name"], token=value, scopes=tuple(t.get("scopes", [])))
@@ -183,7 +202,9 @@ def load_config(path: str | Path) -> RuntimeConfig:
     dev_mode = bool(raw.get("dev_mode", False))
     if not tokens and not dev_mode:
         raise ConfigError(
-            "no auth token resolved from environment and dev_mode is off; refusing to start"
+            "no auth token resolved and dev_mode is off; refusing to start. "
+            "Set the token_env variable, or point auth.tokens[].token_file at "
+            "an owner-only secret file next to the config."
         )
 
     return RuntimeConfig(

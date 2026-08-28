@@ -3,16 +3,154 @@
 from __future__ import annotations
 
 import re
+import threading
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 UPLOAD_ID_RE = re.compile(r"^upl_[a-f0-9]{16,32}$")
 FORBIDDEN_PATH_KEYS = {"path", "file_path", "filepath", "filename", "file"}
 MAX_MEDIA_ITEMS = 4
+UPLOAD_TTL_SECONDS = 900.0
 
 
 class InvalidJobInput(ValueError):
     """Caller input is structurally unusable before admission."""
+
+
+class UploadStore:
+    """Volatile, bounded, self-expiring media store.
+
+    Uploads are transient job inputs, never durable consumer data. An entry
+    that is never claimed by a job used to occupy a slot until process exit,
+    which starved the store and made every media capability fail with
+    QUEUE_FULL. Entries therefore expire on a TTL and the oldest entry is
+    evicted when the store is at capacity, so a stale upload can never block
+    a live request. Reuse across jobs stays possible inside the TTL.
+
+    Exposes the read-only mapping surface the coordinator relies on
+    (``in``, ``[]``, ``len``) so it substitutes for the previous plain dict.
+    """
+
+    def __init__(
+        self,
+        *,
+        max_items: int = 8,
+        max_bytes: int = 40 * 1024 * 1024,
+        ttl_seconds: float = UPLOAD_TTL_SECONDS,
+    ) -> None:
+        self._max_items = max_items
+        self._max_bytes = max_bytes
+        self._ttl = ttl_seconds
+        self._lock = threading.Lock()
+        self._blobs: dict[str, bytes] = {}
+        self._deadlines: dict[str, float] = {}
+        self._pins: dict[str, int] = {}
+
+    def _purge_expired_locked(self, now: float) -> None:
+        expired = [
+            key
+            for key, deadline in self._deadlines.items()
+            if deadline <= now and not self._pins.get(key)
+        ]
+        for key in expired:
+            self._blobs.pop(key, None)
+            self._deadlines.pop(key, None)
+
+    def _evict_oldest_locked(self) -> bool:
+        candidates = {
+            key: deadline
+            for key, deadline in self._deadlines.items()
+            if not self._pins.get(key)
+        }
+        if not candidates:
+            return False
+        oldest = min(candidates, key=candidates.__getitem__)
+        self._blobs.pop(oldest, None)
+        self._deadlines.pop(oldest, None)
+        return True
+
+    def pin(self, upload_ids: list[str]) -> None:
+        """Protect ids an accepted job still needs from TTL and eviction."""
+        with self._lock:
+            for upload_id in upload_ids:
+                self._pins[upload_id] = self._pins.get(upload_id, 0) + 1
+
+    def unpin(self, upload_ids: list[str]) -> None:
+        """Release the protection once a job reached a terminal state. The
+        blob stays available for reuse until its TTL or an eviction."""
+        with self._lock:
+            for upload_id in upload_ids:
+                remaining = self._pins.get(upload_id, 0) - 1
+                if remaining > 0:
+                    self._pins[upload_id] = remaining
+                else:
+                    self._pins.pop(upload_id, None)
+
+    def put(self, upload_id: str, blob: bytes) -> bool:
+        """Store one upload. Returns False only when the blob alone exceeds
+        the whole byte budget, which no amount of eviction can fix."""
+        size = len(blob)
+        if size > self._max_bytes:
+            return False
+        now = time.monotonic()
+        with self._lock:
+            self._purge_expired_locked(now)
+            while (
+                len(self._blobs) >= self._max_items
+                or sum(map(len, self._blobs.values())) + size > self._max_bytes
+            ):
+                if not self._evict_oldest_locked():
+                    break
+            self._blobs[upload_id] = blob
+            self._deadlines[upload_id] = now + self._ttl
+        return True
+
+    def discard(self, upload_ids: list[str]) -> None:
+        """Release ids a terminal job no longer needs."""
+        with self._lock:
+            for upload_id in upload_ids:
+                self._blobs.pop(upload_id, None)
+                self._deadlines.pop(upload_id, None)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._blobs.clear()
+            self._deadlines.clear()
+            self._pins.clear()
+
+    def stats(self) -> dict[str, int]:
+        now = time.monotonic()
+        with self._lock:
+            self._purge_expired_locked(now)
+            return {
+                "items": len(self._blobs),
+                "bytes": sum(map(len, self._blobs.values())),
+                "max_items": self._max_items,
+                "max_bytes": self._max_bytes,
+            }
+
+    def __contains__(self, upload_id: object) -> bool:
+        now = time.monotonic()
+        with self._lock:
+            self._purge_expired_locked(now)
+            return upload_id in self._blobs
+
+    def __getitem__(self, upload_id: str) -> bytes:
+        now = time.monotonic()
+        with self._lock:
+            self._purge_expired_locked(now)
+            return self._blobs[upload_id]
+
+    def __len__(self) -> int:
+        now = time.monotonic()
+        with self._lock:
+            self._purge_expired_locked(now)
+            return len(self._blobs)
+
+    def __iter__(self) -> Iterator[str]:
+        with self._lock:
+            return iter(list(self._blobs))
 
 
 def collect_upload_ids(inp: dict[str, Any]) -> list[str]:

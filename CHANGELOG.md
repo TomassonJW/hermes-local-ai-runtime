@@ -6,6 +6,20 @@ The project follows Semantic Versioning once executable public releases begin. B
 
 ## [Unreleased]
 
+### Fixed
+
+- volatile upload store no longer starves. Entries were retained until process
+  exit, so the 9th upload of a session returned `QUEUE_FULL` and every media
+  capability stayed dead until a manual restart. The store now enforces a TTL
+  and evicts its oldest unpinned entry; media belonging to a queued or running
+  job is pinned and cannot be reclaimed. Observable as
+  `hermes_runtime_upload_store_items`.
+- the runtime can restart unattended. `auth.tokens[].token_file` resolves an
+  owner-only secret file next to the config when the environment carries no
+  token, so a lost shell no longer means a dead console. The environment still
+  wins when set, a group/world-readable file is refused, and a run with neither
+  source still refuses to start.
+
 ### Added
 
 - G-05 loopback capability/job core (native `/api/v1` plus OpenAI chat adapter);

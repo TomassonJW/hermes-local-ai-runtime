@@ -37,6 +37,7 @@ from .coordinator import (
     QueueFull,
 )
 from .store import IdempotencyConflict, JobRow, JobStore
+from .media import UploadStore
 
 REQUEST_ID: ContextVar[str] = ContextVar("request_id", default="req_unavailable")
 
@@ -189,11 +190,9 @@ def _has_scope(principal: Principal, wanted: str) -> bool:
 def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 1024) -> FastAPI:
     store = JobStore(config.db_path)
     counters = {"requests": 0, "auth_failures": 0, "uploads": 0}
-    upload_lock = threading.Lock()
-    uploads: dict[str, bytes] = {}
+    uploads = UploadStore(max_items=8, max_bytes=max_upload_bytes * 2)
     coordinator = JobCoordinator(config, store, media_store=uploads)
     console_mac = hmac.new(os.urandom(32), b"console-v1", hashlib.sha256).hexdigest()
-    max_upload_store_bytes = max_upload_bytes * 2
     openai_profiles = sorted(
         {
             profile
@@ -229,8 +228,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
             yield
         finally:
             coordinator.stop()
-            with upload_lock:
-                uploads.clear()
+            uploads.clear()
 
     app = FastAPI(
         title="Hermes Local AI Runtime",
@@ -547,13 +545,10 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                 content.extend(chunk)
         except UploadTooLarge:
             return error_response("INPUT_TOO_LARGE", "upload exceeds the byte limit", 413)
-        with upload_lock:
-            stored_bytes = sum(len(value) for value in uploads.values())
-            if len(uploads) >= 8 or stored_bytes + size > max_upload_store_bytes:
-                return error_response(
-                    "QUEUE_FULL", "volatile upload store is full", 429, retryable=True
-                )
-            uploads[upload_id] = bytes(content)
+        if not uploads.put(upload_id, bytes(content)):
+            return error_response(
+                "INPUT_TOO_LARGE", "upload exceeds the byte limit", 413
+            )
         counters["uploads"] += 1
         return JSONResponse(
             {
@@ -586,6 +581,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
             [
                 f"hermes_runtime_queue_depth {admission['queued']}",
                 f"hermes_runtime_memory_available_mib {admission['mem_available_mib']}",
+                f"hermes_runtime_upload_store_items {uploads.stats()['items']}",
             ]
         )
         return "\n".join(lines) + "\n"
@@ -636,8 +632,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                                 "INPUT_TOO_LARGE", "upload exceeds the byte limit", 413
                             )
                         upload_id = f"upl_{uuid.uuid4().hex[:20]}"
-                        with upload_lock:
-                            uploads[upload_id] = raw
+                        uploads.put(upload_id, raw)
                         upload_ids.append(upload_id)
             question = "\n".join(texts).strip()
             if not question:
@@ -959,8 +954,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
         if len(raw) > max_upload_bytes:
             return error_response("INPUT_TOO_LARGE", "upload exceeds the byte limit", 413)
         upload_id = f"upl_{uuid.uuid4().hex[:20]}"
-        with upload_lock:
-            uploads[upload_id] = raw
+        uploads.put(upload_id, raw)
         request_data = {
             "capability": "audio.transcribe",
             "capability_version": "1.0.0",

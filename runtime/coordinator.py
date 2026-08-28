@@ -106,11 +106,14 @@ class JobCoordinator:
         for thread in self._threads:
             thread.join(timeout=5)
         with self._payload_lock:
+            pending = list(self._requests.values())
             self._requests.clear()
             self._results.clear()
             self._result_sizes.clear()
             self._result_total_bytes = 0
             self._vector_cache.clear()
+        for request in pending:
+            self._unpin_media(request)
 
     def submit(
         self,
@@ -149,10 +152,12 @@ class JobCoordinator:
             return Submission(job, False)
         with self._payload_lock:
             self._requests[job.job_id] = request
+        self._pin_media(request)
         try:
             self._queue.put_nowait(job.job_id)
         except queue.Full as exc:  # Defensive: Admission and queue share the same bound.
             self.admission.dequeue()
+            self._unpin_media(request)
             with self._payload_lock:
                 self._requests.pop(job.job_id, None)
             self.store.set_status(
@@ -162,6 +167,34 @@ class JobCoordinator:
             )
             raise QueueFull("queue is full", 10) from exc
         return Submission(job, True)
+
+    def _drop_request(self, job_id: str) -> None:
+        """Forget a terminal job's volatile payload and release the media pins
+        it held. Every terminal path must go through here, otherwise an upload
+        stays pinned forever and the bounded store starves."""
+        with self._payload_lock:
+            request = self._requests.pop(job_id, None)
+        self._unpin_media(request)
+
+    def _pin_media(self, request: dict | None) -> None:
+        """Protect an accepted job's uploads from TTL expiry and eviction
+        while it is queued or running."""
+        self._media_pin_op("pin", request)
+
+    def _unpin_media(self, request: dict | None) -> None:
+        """Drop the protection once the job is terminal. The blob remains
+        reusable by another job until its TTL or an eviction reclaims it."""
+        self._media_pin_op("unpin", request)
+
+    def _media_pin_op(self, op: str, request: dict | None) -> None:
+        if not request:
+            return
+        handler = getattr(self._media_store, op, None)
+        if handler is None:
+            return
+        ids = collect_upload_ids(request.get("input") or {})
+        if ids:
+            handler(ids)
 
     def _validate_media(self, route: RouteConfig, request: dict) -> None:
         inp = request.get("input") or {}
@@ -224,8 +257,7 @@ class JobCoordinator:
             self.admission.dequeue()
             if job and job.status != "cancelled":
                 self.store.set_status(job_id, "cancelled")
-            with self._payload_lock:
-                self._requests.pop(job_id, None)
+            self._drop_request(job_id)
             return
         with self._payload_lock:
             request = self._requests.get(job_id)
@@ -244,8 +276,7 @@ class JobCoordinator:
         route = next((r for r in self.config.routes if r.id == job.route_id), None)
         if route is None:
             self.admission.dequeue()
-            with self._payload_lock:
-                self._requests.pop(job_id, None)
+            self._drop_request(job_id)
             self.store.set_status(
                 job_id,
                 "failed",
@@ -266,8 +297,7 @@ class JobCoordinator:
             return
         self.admission.dequeue()
         if not decision.admitted:
-            with self._payload_lock:
-                self._requests.pop(job_id, None)
+            self._drop_request(job_id)
             self.store.set_status(
                 job_id,
                 "rejected",
@@ -409,8 +439,7 @@ class JobCoordinator:
             )
         finally:
             cleanup_job_media(job_id, self._media_root)
-            with self._payload_lock:
-                self._requests.pop(job_id, None)
+            self._drop_request(job_id)
             self.admission.release(route)
 
     def _execute_isolated(self, route: RouteConfig, job: JobRow, request: dict) -> dict:
