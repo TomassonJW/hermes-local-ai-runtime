@@ -12,7 +12,7 @@ the accepted simulated shell. No permanent runtime deployment.
 - Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0`.
 - Operational owner: Hermes (canonical productions clone on the Hermes VM).
-- Current `main`: pending G-11 commit.
+- Current `main`: `797b8a3`.
 - G-11 source: `RELEASE.md`, `packaging/checksums.sha256`, `docs/security-review-g11.md`.
   Evidence: `operations/G11-PUBLIC-RELEASE-2026-08-28.md`.
 - Permanent installation, Hermes config changes, live UI-01: none.
