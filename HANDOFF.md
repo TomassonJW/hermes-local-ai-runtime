@@ -12,7 +12,7 @@ A new session must resume from Git. Notion is not required.
 - Canonical clone: this productions tree on the Hermes VM
 - Official branch: `main`
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` (`baseline/v0.1.0`)
-- Verify `main` is clean at the G-10 commit or newer before mutation.
+- Verify `main` is clean at `5870273` or newer before mutation.
 
 ## Current lot
 
