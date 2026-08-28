@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 from runtime.admission import Admission
 from runtime.app import create_app
 from runtime.config import Budget, ConfigError, RouteConfig, RuntimeConfig, TokenConfig, load_config
+from runtime.coordinator import InputTooLarge, JobCoordinator
 from runtime.store import JobStore
 from runtime.workers import OpenAIUpstreamWorker, WorkerError
 
@@ -674,6 +675,31 @@ def test_native_request_body_is_rejected_before_job_creation_at_byte_limit(tmp_p
         assert response.status_code == 413
         assert response.json()["error"]["code"] == "INPUT_TOO_LARGE"
         assert app_config.db_path and client.app.state.store.counts_by_status() == {}
+
+
+def test_coordinator_rejects_oversized_request_before_retaining_state(tmp_path: Path):
+    app_config = config(tmp_path, request_max_bytes=1024)
+    store = JobStore(app_config.db_path)
+    coordinator = JobCoordinator(app_config, store)
+    request = {
+        "capability": "text.generate",
+        "capability_version": "1.0.0",
+        "profile": "balanced",
+        "input": {"unused": "x" * 2000},
+        "policy": POLICY,
+    }
+
+    with pytest.raises(InputTooLarge):
+        coordinator.submit("consumer-a", request, None)
+
+    with sqlite3.connect(app_config.db_path) as con:
+        assert con.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
+    assert coordinator._queue.empty()
+    admission = coordinator.admission.snapshot()
+    assert admission["queued"] == 0
+    assert admission["light_leases"] == 0
+    assert admission["heavy_leases"] == 0
+    assert coordinator._requests == {}
 
 
 def test_openai_chat_adapter_uses_capability_job_contract(tmp_path: Path):

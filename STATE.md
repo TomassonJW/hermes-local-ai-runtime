@@ -12,7 +12,7 @@ job core are validated on loopback. No permanent runtime deployment exists.
 - Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0` — verified present in clone.
 - Operational owner: Hermes (clone at the canonical productions workspace on the Hermes VM).
-- Bootstrap validator and 42 tests pass on this clone (pinned deps, disposable venv outside the repo).
+- Bootstrap validator and 43 tests pass on this clone (pinned deps, disposable venv outside the repo).
 - Coverage map produced: `operations/COVERAGE-MAP-2026-08-27.md`.
 - Live VM profile refreshed read-only: `operations/LIVE-PROFILE-2026-08-27.md` — measured 10 vCPU / ~19.5 GiB / no GPU / no swap device; favorable vs pinned 8/16, conservative budget kept; profile update proposed, not applied.
 - G-02/G-03/G-04 evidence: `operations/G02-ENVIRONMENT-PROBE-2026-08-27.md`
