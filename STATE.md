@@ -12,6 +12,7 @@ shell. No permanent runtime deployment. Not a daily-use program yet.
 - Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0`.
 - Operational owner: Hermes (canonical productions clone on the Hermes VM).
+- Current `main`: `fb4e059`.
 - G-05 delivery: `952614e`; G-06 delivery: `faa6dac`; Hub shortcut: HermesHub `a7cd8dc`.
 - G-07 source: `runtime/vectors.py`, embed/rerank workers, `/v1/embeddings` and
   `/v1/rerank`. Evidence: `operations/G07-EMBEDDINGS-RERANK-2026-08-28.md`.
