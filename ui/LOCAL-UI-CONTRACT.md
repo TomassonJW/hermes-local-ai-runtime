@@ -7,8 +7,8 @@
 - UI canon version: `1.3.0`
 - UI canon commit: `4d720bf20f3c89e9a9d71072f0b76d55d225cb62`
 - Required procedure: `canonical-ui-design`
-- First visible gate: UI-00
-- Absolute stop: no UI-01 and no runtime backend before Thomas's verdict
+- First visible gate: UI-00 (closed)
+- UI-01: live loopback console, waiting for visible verdict
 
 ## Interface purpose
 
@@ -40,14 +40,15 @@ Understands what the system can do, what is unavailable, what is risky, and what
 
 Persistent destinations:
 
-1. **Overview**
-2. **Capabilities**
-3. **Models**
-4. **Jobs**
-5. **Evaluations**
-6. **Resources**
-7. **Updates**
-8. **Settings**
+1. **Essayer** (primary try surface)
+2. **Overview**
+3. **Capabilities**
+4. **Models**
+5. **Jobs**
+6. **Evaluations**
+7. **Resources**
+8. **Updates**
+9. **Settings**
 
 A separate deep-linkable detail surface may show a capability, model, route, job, evaluation, worker, or event.
 

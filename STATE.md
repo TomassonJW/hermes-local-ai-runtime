@@ -1,45 +1,30 @@
 # State
 
-Last updated: 2026-08-28 14:00 CEST (G-11 public source lot)
+Last updated: 2026-08-28 15:30 CEST (UI-01 live console candidate)
 
 ## Phase
 
-G-00 through G-11 and UI-00 closed on loopback/source terms. UI-00 remains
-the accepted simulated shell. No permanent runtime deployment.
+G-00 through G-11 and UI-00 remain closed. UI-01 is **delivered for human
+look**, not accepted. Runtime is on loopback only. systemd is not enabled.
 
 ## Product status
 
 - Repository public; product baseline `0.1.0`, API/job-core candidate `0.2.0-dev`.
-- Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` on `baseline/v0.1.0`.
-- Operational owner: Hermes (canonical productions clone on the Hermes VM).
-- Current `main`: `797b8a3`.
-- G-11 source: `RELEASE.md`, `packaging/checksums.sha256`, `docs/security-review-g11.md`.
-  Evidence: `operations/G11-PUBLIC-RELEASE-2026-08-28.md`.
-- Permanent installation, Hermes config changes, live UI-01: none.
+- Current `main` was `242bd34` before this lot; UI-01 is a new commit.
+- Live console: `127.0.0.1:8830` behind `/apps/local-ai-runtime/`.
+- llama-swap: `127.0.0.1:8840`. systemd not enabled.
+- Evidence: `operations/UI01-LIVE-CONSOLE-2026-08-28.md`. ADR-0016.
 
 ## Current truth
 
-Public source candidate. Loopback job core and prefix installer exist. Not a
-daily-use program. Not production-supported. Not a substitute for large cloud
-models.
+Runtime can be used from the private Hub URL. Not production-supported.
+Not a daily-driver guarantee. UI-01 waits for Thomas's visible verdict.
 
 ## Gates
 
-- G-00 to G-10 and UI-00: **passed** (unchanged).
-- G-11 - Public release: **passed** as source candidate (no production tag,
-  no systemd enable, no cloud-model substitute claim).
+- G-00 to G-11 and UI-00: **passed**.
+- UI-01: **delivered for look**, not accepted.
 
 ## Next proof
 
-No further gated lot. Later work needs a new explicit decision (live UI,
-permanent service, Hermes skill install, or production consumers).
-
-## Human decisions already made
-
-- Project name: Hermes Local AI Runtime.
-- Public repository.
-- CPU-first inside Hermes; future GPU required but not immediate.
-- UI-00 accepted.
-- G-02 through G-11 authorised. G-11 closed as source publication, not as
-  production support.
-- Hub top-bar shortcut requested and delivered.
+Thomas looks at the official URL and says if the cockpit is usable.

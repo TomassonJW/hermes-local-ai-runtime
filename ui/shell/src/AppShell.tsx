@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, Link, useLocation } from 'react-router-dom'
-import { pageRegistry, DEMO_LABEL, FIXTURE_VERSION } from './fixture/ui00'
+import { NAV } from './catalog'
+import { useRuntime } from './runtime'
 
 const NAV_ICONS: Record<string, string> = {
-  '/': '⌂',
+  '/': '▶',
+  '/overview': '⌂',
   '/capabilities': '⬡',
   '/models': '▣',
   '/jobs': '≡',
@@ -16,7 +18,7 @@ const NAV_ICONS: Record<string, string> = {
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
-      {pageRegistry.map((p) => (
+      {NAV.map((p) => (
         <NavLink
           key={p.path}
           to={p.path}
@@ -37,12 +39,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 export default function AppShell() {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const location = useLocation()
+  const { connected, loading, resources } = useRuntime()
+  const mem = resources ? `${(resources.admission.mem_available_mib / 1024).toFixed(1)} Gio` : null
+  const heavy = resources?.admission.heavy_leases ?? 0
 
   const openNav = () => dialogRef.current?.showModal()
   const closeNav = () => dialogRef.current?.close()
 
-  /* Single responsive threshold: 880px (same value as CSS). Returning to a
-     wider viewport closes the mobile nav layer instead of leaving it modal. */
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return
     const mq = window.matchMedia('(max-width: 880px)')
@@ -56,43 +59,47 @@ export default function AppShell() {
   return (
     <div className="app">
       <a href="#main" className="skip-link">
-        Skip to content
+        Aller au contenu
       </a>
 
       <header className="topbar">
-        <button
-          type="button"
-          className="icon-btn nav-toggle"
-          aria-label="Open navigation"
-          onClick={openNav}
-        >
+        <button type="button" className="icon-btn nav-toggle" aria-label="Ouvrir la navigation" onClick={openNav}>
           ☰
         </button>
         <div className="brand">
-          <span className="name">Hermes Local AI Runtime</span>
-          <span className="scope">Operations console</span>
+          <span className="name">IA locale</span>
+          <span className="scope">console</span>
         </div>
         <div className="spacer" />
-        <Link to="/settings" className="icon-btn" aria-label="Settings" title="Settings">
+        {connected && mem ? (
+          <span className="live-chip" title="Mémoire encore disponible sur la machine">
+            {mem} libres · {heavy ? 'job lourd en cours' : 'aucun job lourd'}
+          </span>
+        ) : null}
+        <Link to="/settings" className="icon-btn" aria-label="Réglages" title="Réglages">
           ⚙
         </Link>
       </header>
 
-      <div className="demo-banner" role="status">
-        <strong>{DEMO_LABEL}.</strong>
-        <span>
-          Every value on every page is a simulated fixture ({FIXTURE_VERSION}). No backend is
-          installed, no model is downloaded, nothing is live.
-        </span>
+      <div className={`demo-banner ${connected ? 'live' : 'off'}`} role="status">
+        {loading ? (
+          <span>Connexion au runtime…</span>
+        ) : connected ? (
+          <>
+            <strong>Runtime allumé.</strong>
+            <span>Loopback seulement. Pas de cloud. Les modèles se chargent au premier essai, puis se déchargent.</span>
+          </>
+        ) : (
+          <>
+            <strong>Runtime éteint.</strong>
+            <span>Aucun chiffre n’est simulé. Les pages d’essai restent vides tant que le moteur n’écoute pas.</span>
+          </>
+        )}
       </div>
 
       <div className="body">
-        <nav className="sidebar" aria-label="Main navigation">
+        <nav className="sidebar" aria-label="Navigation principale">
           <NavLinks />
-          <span className="nav-section">Shell</span>
-          <span className="note" style={{ padding: '0 10px' }}>
-            UI-00 — all pages are prototypes over the same simulated installation.
-          </span>
         </nav>
 
         <main id="main" className="content" key={location.pathname}>
@@ -103,13 +110,13 @@ export default function AppShell() {
       <dialog ref={dialogRef} className="nav-dialog" aria-label="Navigation">
         <div className="nav-dialog-head">
           <div className="brand">
-            <span className="name">Hermes Local AI Runtime</span>
+            <span className="name">IA locale</span>
           </div>
-          <button type="button" className="icon-btn" onClick={closeNav} aria-label="Close navigation">
+          <button type="button" className="icon-btn" onClick={closeNav} aria-label="Fermer la navigation">
             ✕
           </button>
         </div>
-        <nav aria-label="Main navigation (mobile)">
+        <nav aria-label="Navigation principale (mobile)">
           <NavLinks onNavigate={closeNav} />
         </nav>
       </dialog>

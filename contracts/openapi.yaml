@@ -71,7 +71,28 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Capability"
+  /api/v1/console/session:
+    get:
+      x-implementation-status: implemented-ui01
+      security: []
+      operationId: openConsoleSession
+      responses:
+        "200":
+          description: Sets the loopback console cookie
+  /api/v1/resources:
+    get:
+      x-implementation-status: implemented-ui01
+      operationId: describeResources
+      responses:
+        "200":
+          description: Live admission snapshot
   /api/v1/jobs:
+    get:
+      x-implementation-status: implemented-ui01
+      operationId: listOwnJobs
+      responses:
+        "200":
+          description: Jobs owned by the caller
     post:
       x-implementation-status: implemented-g05
       operationId: submitJob

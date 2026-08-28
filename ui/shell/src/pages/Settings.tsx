@@ -30,8 +30,8 @@ export default function Settings() {
   return (
     <>
       <PageHead
-        title="Settings"
-        purpose="Interface preferences apply immediately and are real. Runtime policy sections show the planned safe defaults and are read-only in UI-00."
+        title="Réglages"
+        purpose="Les préférences d’écran s’appliquent tout de suite. La politique runtime reste en lecture seule."
       />
 
       <Card

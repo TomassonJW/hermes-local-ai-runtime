@@ -3,7 +3,9 @@ import { createRoot } from 'react-dom/client'
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 import './styles/app.css'
 import { PrefsProvider } from './prefs'
+import { RuntimeProvider } from './runtime'
 import AppShell from './AppShell'
+import Try from './pages/Try'
 import Overview from './pages/Overview'
 import { CapabilitiesPage, CapabilityDetail } from './pages/Capabilities'
 import { ModelsPage, ModelDetail } from './pages/Models'
@@ -13,14 +15,13 @@ import Resources from './pages/Resources'
 import Updates from './pages/Updates'
 import Settings from './pages/Settings'
 
-/* Hash routing keeps the shell servable from any static file server without
-   rewrite rules — appropriate for a UI-00 preview surface. */
 export const router = createHashRouter([
   {
     path: '/',
     element: <AppShell />,
     children: [
-      { index: true, element: <Overview /> },
+      { index: true, element: <Try /> },
+      { path: 'overview', element: <Overview /> },
       { path: 'capabilities', element: <CapabilitiesPage /> },
       { path: 'capabilities/:id', element: <CapabilityDetail /> },
       { path: 'models', element: <ModelsPage /> },
@@ -38,7 +39,9 @@ export const router = createHashRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <PrefsProvider>
-      <RouterProvider router={router} />
+      <RuntimeProvider>
+        <RouterProvider router={router} />
+      </RuntimeProvider>
     </PrefsProvider>
   </StrictMode>,
 )

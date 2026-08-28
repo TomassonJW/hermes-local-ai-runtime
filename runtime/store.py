@@ -240,6 +240,23 @@ class JobStore:
         finally:
             con.close()
 
+    def list_for_consumer(self, consumer: str, *, limit: int = 50) -> list[JobRow]:
+        bound = max(1, min(int(limit), 200))
+        con = self._connect()
+        try:
+            rows = con.execute(
+                """
+                SELECT * FROM jobs
+                WHERE consumer=?
+                ORDER BY created_at DESC
+                LIMIT ?
+                """,
+                (consumer, bound),
+            ).fetchall()
+            return [self._row_to_job(row) for row in rows]
+        finally:
+            con.close()
+
     def set_status(
         self,
         job_id: str,

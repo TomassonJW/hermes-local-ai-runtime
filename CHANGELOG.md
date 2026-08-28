@@ -15,6 +15,7 @@ The project follows Semantic Versioning once executable public releases begin. B
 - G-09 rootless prefix installer (`python3 -m installkit`);
 - G-10 two in-repo consumers on capability contracts;
 - G-11 public source candidate (matrix, checksums, security review);
+- UI-01 live loopback console (try capabilities, jobs, resources).
 - per-task-family registry (`registry/task-families.yaml`);
 - synthetic public fixture generator for vision/document evaluation.
 
@@ -29,7 +30,7 @@ The project follows Semantic Versioning once executable public releases begin. B
 - G-09 does not enable systemd and does not download models.
 - G-10 does not install the Hermes skill live or connect production Sillage.
 - G-11 is a source candidate, not production support.
-- No permanent service, live UI-01, or Hermes config mutation.
+- UI-01 is a live loopback console. systemd is not enabled.
 
 ## [0.1.0] - 2026-08-27
 

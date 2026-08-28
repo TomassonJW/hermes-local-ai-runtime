@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-08-28 14:00 CEST
+Last updated: 2026-08-28 15:30 CEST
 
 ## Why this file exists
 
@@ -12,49 +12,35 @@ A new session must resume from Git. Notion is not required.
 - Canonical clone: this productions tree on the Hermes VM
 - Official branch: `main`
 - Product baseline: `19070875f0c80e7799f394f6d4d16b481bd9be21` (`baseline/v0.1.0`)
-- Verify `main` is clean at `797b8a3` or newer before mutation.
+- Verify `main` is clean before mutation.
 
 ## Current lot
 
-G-00 through G-11 and UI-00 are **closed**. G-11 is a public source
-candidate, not production support.
-
-Do not reopen G-00 to G-11 without a new defect.
+UI-01 live loopback console. G-00 to G-11 and UI-00 stay closed.
 
 ## Hard stops still in force
 
-Do not install a permanent service, download/promote production weights, expose
-beyond the authorised private boundary, write consumer data, wire live UI-01,
-or change Hermes `config.yaml` without a new explicit decision.
+Do not enable systemd, download/promote production weights, expose beyond
+the private Tailscale path, write consumer data, or change Hermes
+`config.yaml` without a new explicit decision.
 
 ## What already exists
 
-- UI-00 simulated shell at `ui/shell/dist/`
-- Hub top-bar IA locale -> `/apps/local-ai-runtime/` (HermesHub `a7cd8dc`)
-- G-05 to G-08 workers on loopback
-- G-09 `python3 -m installkit`
-- G-10 `consumers/`
-- G-11 checksums and source-release docs
-- Spike-g03 binaries and weights **outside Git**
+- Live UI + API on `127.0.0.1:8830`
+- llama-swap on `127.0.0.1:8840`
+- Hub path `/apps/local-ai-runtime/`
+- Spike-g03 binaries and weights outside Git
 
 ## Next lot
 
-None gated. Wait for a new explicit decision.
+Wait for Thomas's UI-01 verdict. Then Sillage (in the Sillage repo).
 
 ## Resume checklist
 
 1. Read `AGENTS.md`, `STATE.md`, this file, `GATES.md`.
-2. Confirm `main` is clean.
-3. Do not start a new lot without explicit GO.
-4. If the Hub button is dead, restart only the UI-00 static server.
+2. Confirm `127.0.0.1:8830/healthz` is ok before claiming the console is down.
+3. Restart with `HERMES_LOCAL_AI_SERVE_UI=1 python3 -m runtime --config state/ui01-runtime.yaml` plus llama-swap on 8840.
 
 ## Evidence
 
-- G-03: `benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md`
-- G-05: `operations/G05-API-JOB-CORE-2026-08-28.md`
-- G-06: `operations/G06-VISION-DOCUMENTS-2026-08-28.md`
-- G-07: `operations/G07-EMBEDDINGS-RERANK-2026-08-28.md`
-- G-08: `operations/G08-AUDIO-2026-08-28.md`
-- G-09: `operations/G09-PACKAGING-2026-08-28.md`
-- G-10: `operations/G10-CONSUMERS-2026-08-28.md`
-- G-11: `operations/G11-PUBLIC-RELEASE-2026-08-28.md`
+- UI-01: `operations/UI01-LIVE-CONSOLE-2026-08-28.md`

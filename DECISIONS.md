@@ -17,6 +17,7 @@ Current accepted bootstrap decisions:
 - G-08 audio is batch whisper.cpp, not streaming (ADR-0012);
 - G-09 is a rootless prefix install; systemd is shipped not enabled (ADR-0013);
 - G-10 consumers speak capabilities, not model files (ADR-0014);
-- G-11 is a public source candidate, not production support (ADR-0015).
+- G-11 is a public source candidate, not production support (ADR-0015);
+- UI-01 is a live loopback console, not production support (ADR-0016).
 
 A decision becomes active only when its ADR status is `Accepted` or when this repository's product constitution explicitly makes it non-negotiable.

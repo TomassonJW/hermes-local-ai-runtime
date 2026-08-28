@@ -972,7 +972,7 @@ def test_exposed_routes_equal_openapi_routes_marked_implemented(tmp_path: Path):
     exposed = {
         (route.path, method.lower())
         for route in app.routes
-        for method in route.methods
+        for method in getattr(route, "methods", None) or []
         if method not in {"HEAD", "OPTIONS"}
     }
     contract = yaml.safe_load(Path("contracts/openapi.yaml").read_text())
@@ -982,7 +982,7 @@ def test_exposed_routes_equal_openapi_routes_marked_implemented(tmp_path: Path):
         for method, operation in path_item.items()
         if isinstance(operation, dict)
         and operation.get("x-implementation-status")
-        in {"implemented-g05", "implemented-g07", "implemented-g08"}
+        in {"implemented-g05", "implemented-g07", "implemented-g08", "implemented-ui01"}
     }
     assert exposed == implemented
 

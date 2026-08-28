@@ -13,9 +13,9 @@ new defect.
 
 ## Next executable
 
-None. Wait for a new explicit decision.
+UI-01 delivered for Thomas's look. Sillage wiring stays in the Sillage repo.
 
 ## Parked
 
-Permanent service, live UI-01, Hermes skill install, production consumers,
+Permanent systemd service, Hermes skill install, production consumers,
 shared vector DB, public SaaS, automatic cloud routing, GPU vendor choice.

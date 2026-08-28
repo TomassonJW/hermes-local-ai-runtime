@@ -12,16 +12,19 @@ import base64
 import hashlib
 import hmac
 import json
+import os
 import threading
 import time
 import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import RUNTIME_VERSION
@@ -36,6 +39,15 @@ from .coordinator import (
 from .store import IdempotencyConflict, JobRow, JobStore
 
 REQUEST_ID: ContextVar[str] = ContextVar("request_id", default="req_unavailable")
+
+CONSOLE_PREFIX = "/apps/local-ai-runtime"
+CONSOLE_SCOPES = (
+    "capability:invoke:*",
+    "job:read:self",
+    "job:cancel:self",
+    "system:read",
+)
+CONSOLE_DIST = Path(__file__).resolve().parents[1] / "ui" / "shell" / "dist"
 
 ERROR_HTTP_STATUS = {
     "INVALID_INPUT": 400,
@@ -180,6 +192,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
     upload_lock = threading.Lock()
     uploads: dict[str, bytes] = {}
     coordinator = JobCoordinator(config, store, media_store=uploads)
+    console_mac = hmac.new(os.urandom(32), b"console-v1", hashlib.sha256).hexdigest()
     max_upload_store_bytes = max_upload_bytes * 2
     openai_profiles = sorted(
         {
@@ -230,6 +243,13 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
 
     @app.middleware("http")
     async def count_requests(request: Request, call_next):
+        path = request.scope.get("path") or ""
+        if path == CONSOLE_PREFIX or path.startswith(CONSOLE_PREFIX + "/"):
+            stripped = path[len(CONSOLE_PREFIX) :] or "/"
+            request.scope["path"] = stripped
+            request.scope["root_path"] = (
+                str(request.scope.get("root_path") or "") + CONSOLE_PREFIX
+            )
         counters["requests"] += 1
         request_id = f"req_{uuid.uuid4().hex[:20]}"
         context_token = REQUEST_ID.set(request_id)
@@ -282,20 +302,26 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
         )
 
     async def principal(
+        request: Request,
         authorization: Annotated[str | None, Header()] = None,
     ) -> Principal:
         if config.dev_mode and not config.tokens:
             return Principal(
                 name="dev-loopback",
-                scopes=("capability:invoke:*", "job:read:self", "job:cancel:self", "system:read"),
+                scopes=CONSOLE_SCOPES,
             )
-        if not authorization or not authorization.startswith("Bearer "):
-            counters["auth_failures"] += 1
-            raise HTTPException(status_code=401, detail="AUTH_REQUIRED")
-        candidate = authorization[7:]
-        for token in config.tokens:
-            if hmac.compare_digest(candidate, token.token):
-                return Principal(name=token.name, scopes=token.scopes)
+        if authorization and authorization.startswith("Bearer "):
+            candidate = authorization[7:]
+            for token in config.tokens:
+                if hmac.compare_digest(candidate, token.token):
+                    return Principal(name=token.name, scopes=token.scopes)
+        cookie = request.cookies.get("hlair_console") or ""
+        if (
+            cookie
+            and len(cookie) == len(console_mac)
+            and hmac.compare_digest(cookie, console_mac)
+        ):
+            return Principal(name="console", scopes=CONSOLE_SCOPES)
         counters["auth_failures"] += 1
         raise HTTPException(status_code=401, detail="AUTH_REQUIRED")
 
@@ -334,6 +360,19 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
     async def healthz() -> dict:
         return {"status": "ok"}
 
+    @app.get("/api/v1/console/session")
+    async def console_session(response: Response) -> dict:
+        response.set_cookie(
+            key="hlair_console",
+            value=console_mac,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+            path="/",
+            max_age=12 * 3600,
+        )
+        return {"principal": "console", "listen_policy": "loopback-only"}
+
     @app.get("/readyz")
     async def readyz() -> dict:
         # SQLite was opened at construction and coordinator is created. No route
@@ -370,6 +409,7 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                     "id": route.capability,
                     "version": route.capability_version,
                     "profiles": [],
+                    "routes": [],
                     "sync_allowed": route.sync_allowed,
                     "status": "available",
                 },
@@ -377,7 +417,35 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
             for profile in route.profiles:
                 if profile not in entry["profiles"]:
                     entry["profiles"].append(profile)
+                entry["routes"].append(
+                    {
+                        "profile": profile,
+                        "engine": route.engine,
+                        "resource_class": route.resource_class,
+                    }
+                )
         return {"capabilities": list(by_key.values())}
+
+    @app.get("/api/v1/jobs")
+    async def list_jobs(p: Principal = Depends(principal)) -> dict:
+        require_scope(p, "job:read:self")
+        return {"jobs": [job_view(job) for job in store.list_for_consumer(p.name)]}
+
+    @app.get("/api/v1/resources")
+    async def resources(p: Principal = Depends(principal)) -> dict:
+        require_scope(p, "system:read")
+        return {
+            "admission": coordinator.admission.snapshot(),
+            "budget": {
+                "heavy_slots": config.budget.heavy_slots,
+                "light_slots": config.budget.light_slots,
+                "queue_max": config.budget.queue_max,
+                "memory_floor_available_mib": config.budget.memory_floor_available_mib,
+                "hard_memory_mib": config.budget.hard_memory_mib,
+            },
+            "loadavg": list(os.getloadavg()),
+            "hardware_profile": "hermes-cpu-8vcpu-16gib",
+        }
 
     @app.post("/api/v1/jobs")
     async def submit_job(
@@ -952,6 +1020,8 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
             }
         )
 
+    if os.environ.get("HERMES_LOCAL_AI_SERVE_UI") == "1" and CONSOLE_DIST.is_dir():
+        app.mount("/", StaticFiles(directory=CONSOLE_DIST, html=True), name="console")
     return app
 
 
@@ -963,6 +1033,8 @@ def job_view(job: JobRow) -> dict:
         "profile": job.profile,
         "status": job.status,
         "route_id": job.route_id,
+        "consumer": job.consumer,
+        "created_at": job.created_at,
     }
     if job.error is not None:
         data["error"] = job.error

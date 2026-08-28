@@ -1,0 +1,193 @@
+# UI-01 loopback console. Copy outside Git. Tokens stay in the environment.
+listen:
+  host: 127.0.0.1
+  port: 8830
+
+db_path: ./state/ui01-runtime.db
+dev_mode: false
+
+auth:
+  tokens:
+    - name: local-consumer
+      token_env: HERMES_LOCAL_AI_TOKEN
+      scopes:
+        - capability:invoke:*
+        - job:read:self
+        - job:cancel:self
+        - system:read
+
+budget:
+  heavy_slots: 1
+  light_slots: 2
+  queue_max: 8
+  memory_floor_available_mib: 4096
+  hard_memory_mib: 10240
+
+routes:
+  - id: text-generate-dummy-fast@2026-08
+    capability: text.generate
+    capability_version: 1.0.0
+    profiles: [fast]
+    worker: echo
+    engine: dummy
+    engine_version: g05
+    resource_class: light
+    memory_estimate_mib: 1
+    sync_allowed: true
+    timeout_ms: 2000
+
+  - id: text-generate-balanced@2026-08
+    capability: text.generate
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: text-small
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 1200
+    sync_allowed: true
+    timeout_ms: 120000
+    preset: qwen3-0.6b-q8-no-think
+
+  - id: document-text-extract@2026-08
+    capability: document.text_extract
+    capability_version: 1.0.0
+    profiles: [fast, balanced, accurate]
+    worker: document-native
+    engine: pdftotext
+    engine_version: poppler
+    resource_class: tiny
+    memory_estimate_mib: 64
+    sync_allowed: true
+    timeout_ms: 15000
+
+  - id: document-ocr@2026-08
+    capability: document.ocr
+    capability_version: 1.0.0
+    profiles: [fast, balanced, accurate]
+    worker: document-ocr
+    engine: tesseract
+    engine_version: "5"
+    resource_class: medium
+    memory_estimate_mib: 256
+    sync_allowed: false
+    timeout_ms: 60000
+
+  - id: document-parse@2026-08
+    capability: document.parse
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: document-parse
+    engine: tesseract
+    engine_version: "5"
+    resource_class: medium
+    memory_estimate_mib: 256
+    sync_allowed: false
+    timeout_ms: 60000
+
+  - id: document-extract-structured@2026-08
+    capability: document.extract_structured
+    capability_version: 1.0.0
+    profiles: [fast, balanced]
+    worker: document-structured
+    engine: tesseract+deterministic
+    engine_version: g06
+    resource_class: medium
+    memory_estimate_mib: 256
+    sync_allowed: false
+    timeout_ms: 60000
+
+  - id: vision-detect@2026-08
+    capability: vision.detect_objects
+    capability_version: 1.0.0
+    profiles: [fast, balanced]
+    worker: object-detect
+    engine: saturated-box-detector
+    engine_version: g06
+    resource_class: light
+    memory_estimate_mib: 64
+    sync_allowed: true
+    timeout_ms: 10000
+
+  - id: vision-compare@2026-08
+    capability: vision.compare
+    capability_version: 1.0.0
+    profiles: [fast]
+    worker: image-embed
+    engine: average-hash
+    engine_version: g06
+    resource_class: light
+    memory_estimate_mib: 64
+    sync_allowed: true
+    timeout_ms: 10000
+
+  - id: vision-analyze-balanced@2026-08
+    capability: vision.analyze
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: vision-2b
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: heavy
+    memory_estimate_mib: 3500
+    sync_allowed: true
+    timeout_ms: 180000
+    preset: vision-balanced-cpu-v1
+
+  - id: text-embed-balanced@2026-08
+    capability: text.embed
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: embed
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 900
+    sync_allowed: true
+    timeout_ms: 120000
+
+  - id: search-rerank-balanced@2026-08
+    capability: search.rerank
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: rerank
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 1400
+    sync_allowed: true
+    timeout_ms: 120000
+
+  - id: audio-transcribe-fast@2026-08
+    capability: audio.transcribe
+    capability_version: 1.0.0
+    profiles: [fast]
+    worker: whisper-cpp
+    engine: whisper.cpp
+    engine_version: b4938
+    resource_class: medium
+    memory_estimate_mib: 512
+    sync_allowed: true
+    timeout_ms: 180000
+    upstream_model: ggml-tiny.bin
+
+  - id: audio-transcribe-balanced@2026-08
+    capability: audio.transcribe
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: whisper-cpp
+    engine: whisper.cpp
+    engine_version: b4938
+    resource_class: heavy
+    memory_estimate_mib: 1024
+    sync_allowed: true
+    timeout_ms: 180000
+    upstream_model: ggml-base.bin

@@ -20,7 +20,9 @@ Must not provide real inference, a permanent backend, model downloads, fake live
 
 Pass only after canonical UI checks, desktop/mobile verification, private URL verification when authorised, and Thomas's explicit verdict.
 
-**Absolute stop:** no UI-01 and no runtime backend before that verdict.
+**Absolute stop (historical):** UI-00 required Thomas's verdict before UI-01.
+UI-01 was authorised 2026-08-28. The live console is not accepted until the
+visible verdict.
 
 ## G-02 — Read-only environment probe
 
@@ -63,3 +65,9 @@ At least two independent consumers use stable capability contracts. Sillage may 
 ## G-11 — Public release
 
 Requires support matrix, reproducible install/uninstall, API compatibility policy, public synthetic evaluation, security review, licence inventory, CI/release artefacts, and no universal frontier-parity claim.
+
+## UI-01 — Live loopback console
+
+Serve the operations console from the running control plane on loopback.
+Operator try surface uses capabilities and profiles, not GGUF filenames.
+Pass only after Thomas's visible verdict. systemd remains not enabled.
