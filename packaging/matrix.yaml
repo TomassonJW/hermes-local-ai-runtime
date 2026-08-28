@@ -1,0 +1,8 @@
+os: ubuntu-24.04
+arch: x86_64
+status: supported
+notes: Measured on the Hermes CPU VM. Other OS/arch combinations are unsupported until G-11.
+loopback_default: 127.0.0.1
+systemd_user_unit: shipped-not-enabled
+proxmox_mutation: forbidden
+model_download: never-during-install

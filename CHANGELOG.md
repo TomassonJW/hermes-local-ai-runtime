@@ -12,6 +12,7 @@ The project follows Semantic Versioning once executable public releases begin. B
 - G-06 vision and document workers behind that job core;
 - G-07 embeddings, bounded rerank, result cache and consumer persist helpers;
 - G-08 whisper.cpp batch transcription and `/v1/audio/transcriptions`;
+- G-09 rootless prefix installer (`python3 -m installkit`);
 - per-task-family registry (`registry/task-families.yaml`);
 - synthetic public fixture generator for vision/document evaluation.
 
@@ -23,6 +24,7 @@ The project follows Semantic Versioning once executable public releases begin. B
   still rank an English invoice first inside the same family.
 - G-08 is batch whisper.cpp. Silence abstains. Identifier-level French on
   espeak is not claimed. Streaming and Qwen3-ASR are not implemented.
+- G-09 does not enable systemd and does not download models.
 - No permanent service, live UI-01, or Hermes config mutation.
 
 ## [0.1.0] - 2026-08-27

@@ -2,9 +2,9 @@
 
 Only the active slice is executable. Later slices are ordered hypotheses, not commitments.
 
-## Closed - Takeover, UI-00, engine, G-05 to G-08
+## Closed - Takeover, UI-00, engine, G-05 to G-09
 
-G-00 through G-08 and UI-00 are closed on `main`. Do not re-open them without a
+G-00 through G-09 and UI-00 are closed on `main`. Do not re-open them without a
 new defect. Hub top-bar shortcut is in HermesHub `a7cd8dc`.
 
 - [x] Shared capability-kernel boundary.
@@ -21,23 +21,16 @@ new defect. Hub top-bar shortcut is in HermesHub `a7cd8dc`.
 - [x] G-06 vision/document families on synthetic fixtures.
 - [x] G-07 embeddings and bounded rerank (no shared vector DB).
 - [x] G-08 whisper.cpp batch transcription (no streaming, not Whisper Large).
+- [x] G-09 rootless prefix install (unit shipped, not enabled).
 
-## Next executable - G-09 (waiting for explicit GO)
+## Next executable - G-10 (waiting for explicit GO)
 
-- [ ] Packaging and safe installation (`missions/08-hardening-packaging-release.md`).
+- [ ] Two independent consumers (`missions/08-hardening-packaging-release.md`).
 - [ ] Do not start without Thomas's explicit lot decision.
-
-## Capability families
-
-- [x] Vision and Hermes auxiliary route (synthetic V-01/V-02; V-03/V-06/V-09 still review).
-- [x] Native PDF, Tesseract OCR and deterministic structured extraction (PaddleOCR not measured).
-- [x] Synthetic object detection and near-duplicate hash (not general ONNX / semantic embed).
-- [x] Embeddings and reranking (1024-d L2; FastEmbed not wired).
-- [x] whisper.cpp batch (tiny/base/small measured; Large not default; Qwen3-ASR not packaged).
 
 ## Operations and release
 
-- [ ] Packaging, service, model-store CLI, upgrade/rollback, notices, backup.
+- [x] Packaging, model-store CLI, upgrade/rollback, notices, backup.
 - [ ] Live operations UI and Hermes installation.
 - [ ] Two independent consumers.
 - [ ] Public release gates.
