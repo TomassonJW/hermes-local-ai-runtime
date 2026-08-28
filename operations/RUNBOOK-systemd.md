@@ -36,6 +36,17 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8840/v1/models    # 20
 `/healthz` while every model-backed capability fails. That is precisely how the
 2026-08-28 outage hid itself.
 
+For a real end-to-end verdict rather than a liveness ping, run the sweep:
+
+```bash
+python3 scripts/capability_sweep.py   # expects 13/13 OK, ~60s
+```
+
+It calls every capability with generated fixtures over loopback and checks the
+answers are meaningful, not merely non-empty. The runtime declares 19
+capability/profile pairs; the sweep exercises the 13 that are wired to a real
+engine today. It is the check that found the 2026-08-28 outage.
+
 ## Boot behaviour
 
 `Linger=yes` is set for the `hermes` user, so the units start at boot without an

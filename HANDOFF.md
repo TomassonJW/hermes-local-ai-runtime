@@ -45,6 +45,8 @@ No gated lot here. UI-01 cockpit was used live.
 3. Confirm `127.0.0.1:8840/v1/models` is ok. When llama-swap is down, the four
    model-backed routes (`text.generate/balanced`, `text.embed`,
    `search.rerank`, `vision.analyze`) fail while the rest still answer.
+   For a real verdict rather than a ping: `python3 scripts/capability_sweep.py`
+   (expects 13/13 OK).
 4. Both processes are systemd **user** services. Start or restart with
    `systemctl --user start hlair.target` or
    `systemctl --user restart hlair-runtime.service`. Logs:
