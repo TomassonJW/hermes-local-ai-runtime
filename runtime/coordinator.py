@@ -24,6 +24,7 @@ from .media import (
     validate_upload_ids,
 )
 from .store import IdempotencyConflict, JobRow, JobStore
+from .vectors import cache_key
 from .workers import WorkerError, run_worker_process, validate_against_schema
 
 MEDIA_WORKERS = {
@@ -70,6 +71,7 @@ class JobCoordinator:
         self._results: OrderedDict[str, dict] = OrderedDict()
         self._result_sizes: dict[str, int] = {}
         self._result_total_bytes = 0
+        self._vector_cache: OrderedDict[str, dict] = OrderedDict()
         self.recovered_jobs = 0
 
     def start(self) -> None:
@@ -107,6 +109,7 @@ class JobCoordinator:
             self._results.clear()
             self._result_sizes.clear()
             self._result_total_bytes = 0
+            self._vector_cache.clear()
 
     def submit(
         self,
@@ -279,6 +282,17 @@ class JobCoordinator:
         started = time.monotonic()
         queued_ms = max(0, round((time.time() - job.created_at) * 1000))
         self.store.set_status(job_id, "running")
+        cache_status = "bypass"
+        cache_token = None
+        cached_output = None
+        if route.capability in {"text.embed", "search.rerank"}:
+            cache_token = cache_key(route.id, route.capability, request)
+            if cache_token is None:
+                cache_status = "bypass"
+            else:
+                with self._payload_lock:
+                    cached_output = self._vector_cache.get(cache_token)
+                cache_status = "hit" if cached_output is not None else "miss"
         try:
             exec_request = request
             ids = collect_upload_ids(request.get("input") or {})
@@ -288,8 +302,18 @@ class JobCoordinator:
                 exec_request["media_files"] = materialize(
                     job_id, ids, self._media_store, self._media_root
                 )
-            output = self._execute_isolated(route, job, exec_request)
-            inference_ms = round((time.monotonic() - started) * 1000)
+            if cached_output is not None:
+                output = cached_output
+                inference_ms = 0
+            else:
+                output = self._execute_isolated(route, job, exec_request)
+                inference_ms = round((time.monotonic() - started) * 1000)
+                if cache_status == "miss" and cache_token is not None:
+                    with self._payload_lock:
+                        self._vector_cache[cache_token] = output
+                        self._vector_cache.move_to_end(cache_token)
+                        while len(self._vector_cache) > 64:
+                            self._vector_cache.popitem(last=False)
             if self.store.cancel_requested(job_id):
                 self.store.set_status(job_id, "cancelled")
                 return
@@ -307,7 +331,7 @@ class JobCoordinator:
                 queued_ms + inference_ms + validation_ms,
                 round((time.time() - job.created_at) * 1000),
             )
-            provenance = self._provenance(route, job)
+            provenance = self._provenance(route, job, cache=cache_status)
             warnings = []
             if route.worker == "openai-upstream":
                 warnings.append(
@@ -464,7 +488,7 @@ class JobCoordinator:
             process.join(timeout=0.5)
 
     @staticmethod
-    def _provenance(route: RouteConfig, job: JobRow) -> dict:
+    def _provenance(route: RouteConfig, job: JobRow, cache: str = "bypass") -> dict:
         return {
             "runtime_version": RUNTIME_VERSION,
             "capability": job.capability,
@@ -476,7 +500,7 @@ class JobCoordinator:
             "model_artifacts": list(route.model_artifacts),
             "preset": route.preset,
             "transformations": [],
-            "cache": "bypass",
+            "cache": cache,
             "hardware_profile": "hermes-cpu-8vcpu-16gib",
         }
 

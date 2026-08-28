@@ -260,7 +260,7 @@ paths:
         "200": {description: Compatible response or event stream}
   /v1/embeddings:
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented-g07
       operationId: createEmbeddings
       requestBody:
         required: true
@@ -279,7 +279,7 @@ paths:
         "200": {description: Embedding response}
   /v1/rerank:
     post:
-      x-implementation-status: planned
+      x-implementation-status: implemented-g07
       operationId: rerank
       requestBody:
         required: true

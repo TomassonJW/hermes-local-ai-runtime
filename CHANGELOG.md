@@ -10,6 +10,7 @@ The project follows Semantic Versioning once executable public releases begin. B
 
 - G-05 loopback capability/job core (native `/api/v1` plus OpenAI chat adapter);
 - G-06 vision and document workers behind that job core;
+- G-07 embeddings, bounded rerank, result cache and consumer persist helpers;
 - per-task-family registry (`registry/task-families.yaml`);
 - synthetic public fixture generator for vision/document evaluation.
 
@@ -17,6 +18,8 @@ The project follows Semantic Versioning once executable public releases begin. B
 
 - G-06 is not universal vision. PaddleOCR, private corpora, fine UI review,
   charts and multi-image reasoning were not measured.
+- G-07 is not a vector database. FastEmbed is not wired. French queries may
+  still rank an English invoice first inside the same family.
 - No permanent service, live UI-01, or Hermes config mutation.
 
 ## [0.1.0] - 2026-08-27

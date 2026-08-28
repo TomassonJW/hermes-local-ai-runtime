@@ -1,0 +1,56 @@
+# G-07 loopback configuration example.
+# Copy outside Git. Tokens stay in the process environment.
+listen:
+  host: 127.0.0.1
+  port: 8850
+
+db_path: ./state/g07-runtime.db
+dev_mode: false
+
+auth:
+  tokens:
+    - name: local-consumer
+      token_env: HERMES_LOCAL_AI_TOKEN
+      scopes:
+        - capability:invoke:*
+        - job:read:self
+        - job:cancel:self
+        - system:read
+
+budget:
+  heavy_slots: 1
+  light_slots: 2
+  queue_max: 8
+  memory_floor_available_mib: 4096
+  hard_memory_mib: 10240
+
+routes:
+  - id: text-embed-balanced@2026-08
+    capability: text.embed
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: embed
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 900
+    sync_allowed: true
+    timeout_ms: 120000
+    preset: qwen3-embed-0.6b-q8
+
+  - id: search-rerank-balanced@2026-08
+    capability: search.rerank
+    capability_version: 1.0.0
+    profiles: [balanced]
+    worker: openai-upstream
+    upstream_base: http://127.0.0.1:8840
+    upstream_model: rerank
+    engine: llama.cpp
+    engine_version: b10662
+    resource_class: light
+    memory_estimate_mib: 1400
+    sync_allowed: true
+    timeout_ms: 120000
+    preset: qwen3-reranker-0.6b-q8

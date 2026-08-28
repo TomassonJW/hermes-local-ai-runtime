@@ -5,6 +5,7 @@ notice: >
   revisions, files, hashes, and engine compatibility are installation records.
   G-03 spike measurements: benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md.
   G-06 task families: benchmarks/results/G06-VISION-DOCUMENTS-2026-08-28.md.
+  G-07 embeddings/rerank: benchmarks/results/G07-EMBEDDINGS-RERANK-2026-08-28.md.
 
 engines:
   - id: llama-cpp
@@ -191,7 +192,7 @@ model_families:
       - resident or low-cost OCR specialist
 
   - id: qwen3-embedding-0.6b
-    status: compatible
+    status: benchmarked
     source:
       repository: Qwen/Qwen3-Embedding-0.6B
       official: true
@@ -206,7 +207,7 @@ model_families:
       - smaller ONNX/FastEmbed multilingual models
 
   - id: qwen3-reranker-0.6b
-    status: compatible
+    status: benchmarked
     source:
       repository: Qwen/Qwen3-Reranker-0.6B
       official: true

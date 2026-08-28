@@ -21,6 +21,13 @@ import httpx
 
 from .config import RouteConfig
 from .document import DocumentError, extract_invoice_fields, extract_pdf_text, ocr_file
+from .vectors import (
+    MAX_EMBED_BATCH,
+    l2_normalize,
+    parse_embed_items,
+    parse_rerank_request,
+    space_id,
+)
 from .vision_specialists import assess_image, average_hash, detect_saturated_boxes, similarity
 
 
@@ -75,6 +82,8 @@ class OpenAIUpstreamWorker:
             return self._extract_structured(route, request)
         if cap == "text.embed":
             return self._embed(route, request)
+        if cap == "search.rerank":
+            return self._rerank(route, request)
         if cap == "text.generate":
             return self._generate(route, request)
         if cap in {"vision.analyze", "vision.extract_structured", "vision.classify"}:
@@ -151,23 +160,89 @@ class OpenAIUpstreamWorker:
         return {"data": parsed}
 
     def _embed(self, route: RouteConfig, request: dict) -> dict:
-        texts = request["input"].get("texts")
-        if not isinstance(texts, list) or not texts or not all(isinstance(t, str) for t in texts):
-            raise WorkerError("INVALID_INPUT", "input.texts must be a non-empty string array", False)
-        if len(texts) > 64:
+        try:
+            items = parse_embed_items(request.get("input") or {})
+        except ValueError as exc:
+            raise WorkerError("INVALID_INPUT", str(exc), False) from exc
+        if len(items) > MAX_EMBED_BATCH:
             raise WorkerError("INPUT_TOO_LARGE", "at most 64 texts per batch", False)
+        for item in items:
+            if len(item["text"]) > route.max_input_chars:
+                raise WorkerError("INPUT_TOO_LARGE", "input exceeds route limit", False)
+        texts = [item["text"] for item in items]
         data = self._post_json(
             route,
             "/v1/embeddings",
             {"model": route.upstream_model or "default", "input": texts},
         )["data"]
-        vectors = [d["embedding"] for d in data]
+        try:
+            vectors = [l2_normalize([float(value) for value in row["embedding"]]) for row in data]
+        except (KeyError, TypeError, ValueError) as exc:
+            raise WorkerError("MODEL_LOAD_FAILED", "upstream embeddings are invalid", True) from exc
+        if len(vectors) != len(items):
+            raise WorkerError("MODEL_LOAD_FAILED", "embedding count mismatch", True)
         dims = len(vectors[0]) if vectors else 0
+        if any(len(vector) != dims for vector in vectors):
+            raise WorkerError("MODEL_LOAD_FAILED", "embedding dimensions mismatch", True)
+        profile = str(request.get("profile") or route.profiles[0])
         return {
-            "vectors": vectors,
+            "items": [
+                {"id": item["id"], "vector": vector}
+                for item, vector in zip(items, vectors)
+            ],
             "dimensions": dims,
-            "normalized": True,
-            "reproducibility": "stable per request shape; batch composition may vary at ~1e-3",
+            "normalisation": "l2",
+            "space_id": space_id(route.capability, route.capability_version, profile),
+            "reproducibility": (
+                "stable per request shape; batch composition may vary at ~1e-3"
+            ),
+        }
+
+    def _rerank(self, route: RouteConfig, request: dict) -> dict:
+        try:
+            query, candidates, top_n = parse_rerank_request(request.get("input") or {})
+        except ValueError as exc:
+            raise WorkerError("INVALID_INPUT", str(exc), False) from exc
+        if len(query) > route.max_input_chars or any(
+            len(item["text"]) > route.max_input_chars for item in candidates
+        ):
+            raise WorkerError("INPUT_TOO_LARGE", "input exceeds route limit", False)
+        body = self._post_json(
+            route,
+            "/v1/rerank",
+            {
+                "model": route.upstream_model or "default",
+                "query": query,
+                "documents": [item["text"] for item in candidates],
+                "top_n": top_n,
+            },
+        )
+        ranked: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for row in body.get("results") or []:
+            if not isinstance(row, dict):
+                continue
+            index = row.get("index")
+            if not isinstance(index, int) or index < 0 or index >= len(candidates):
+                continue
+            candidate_id = candidates[index]["id"]
+            if candidate_id in seen:
+                continue
+            seen.add(candidate_id)
+            ranked.append(
+                {
+                    "id": candidate_id,
+                    "score": float(row.get("relevance_score", 0)),
+                }
+            )
+        ranked.sort(key=lambda item: item["score"], reverse=True)
+        profile = str(request.get("profile") or route.profiles[0])
+        return {
+            "candidates": [
+                {"id": item["id"], "score": item["score"], "rank": rank}
+                for rank, item in enumerate(ranked[:top_n], start=1)
+            ],
+            "space_id": space_id(route.capability, route.capability_version, profile),
         }
 
     def _generate(self, route: RouteConfig, request: dict) -> dict:

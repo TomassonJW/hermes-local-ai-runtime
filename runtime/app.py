@@ -119,6 +119,22 @@ class OpenAIChatRequest(BaseModel):
     stream: bool = False
 
 
+class OpenAIEmbeddingsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = Field(min_length=1, max_length=100)
+    input: str | list[str]
+
+
+class OpenAIRerankRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    model: str = Field(min_length=1, max_length=100)
+    query: str = Field(min_length=1, max_length=200_000)
+    documents: list[str] = Field(min_length=1, max_length=100)
+    top_n: int | None = Field(default=None, ge=1, le=100)
+
+
 class Principal(BaseModel):
     name: str
     scopes: tuple[str, ...]
@@ -174,6 +190,18 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
         }
     )
     openai_aliases = {f"local-{profile}": profile for profile in openai_profiles}
+    embed_aliases: dict[str, str] = {}
+    rerank_aliases: dict[str, str] = {}
+    for route in config.routes:
+        if not route.sync_allowed:
+            continue
+        for profile in route.profiles:
+            if route.capability == "text.embed":
+                embed_aliases[f"hlair/embed-{profile}"] = profile
+                embed_aliases[f"local-embed-{profile}"] = profile
+            if route.capability == "search.rerank":
+                rerank_aliases[f"hlair/rerank-{profile}"] = profile
+                rerank_aliases[f"local-rerank-{profile}"] = profile
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -679,7 +707,168 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                     "owned_by": "local-runtime",
                 }
             )
+        for alias in sorted(set(embed_aliases) | set(rerank_aliases)):
+            models.append({"id": alias, "object": "model", "owned_by": "local-runtime"})
         return {"object": "list", "data": models}
+
+    @app.post("/v1/embeddings")
+    async def openai_embeddings(
+        body: OpenAIEmbeddingsRequest, p: Principal = Depends(principal)
+    ):
+        require_scope(p, "capability:invoke:text")
+        profile = embed_aliases.get(body.model)
+        if profile is None:
+            raise HTTPException(status_code=404, detail="NOT_FOUND")
+        route = config.route_for("text.embed", "1.0.0", profile)
+        if route is None or not route.sync_allowed:
+            return error_response(
+                "CAPABILITY_UNAVAILABLE", "no synchronous embed route", 503
+            )
+        texts = [body.input] if isinstance(body.input, str) else body.input
+        if not texts or not all(isinstance(item, str) for item in texts):
+            return error_response("INVALID_INPUT", "input must be a string or string array", 400)
+        request_data = {
+            "capability": "text.embed",
+            "capability_version": "1.0.0",
+            "profile": profile,
+            "input": {"texts": texts},
+            "constraints": {
+                "timeout_ms": route.timeout_ms,
+                "priority": "interactive",
+                "allow_degraded_route": False,
+            },
+            "policy": {
+                "data_classification": "internal",
+                "cloud_fallback_allowed": False,
+                "retention": "none",
+            },
+        }
+        try:
+            submission = coordinator.submit(p.name, request_data, None)
+        except CapabilityUnavailable:
+            return error_response("CAPABILITY_UNAVAILABLE", "no approved route", 503)
+        except InvalidJobInput as exc:
+            return error_response("INVALID_INPUT", str(exc), 400)
+        except QueueFull as exc:
+            return error_response(
+                "QUEUE_FULL",
+                str(exc),
+                429,
+                retryable=True,
+                retry_after_seconds=exc.retry_after_seconds,
+            )
+        job = await asyncio.to_thread(
+            coordinator.wait,
+            submission.job.job_id,
+            route.timeout_ms / 1000 + 1,
+        )
+        if job is None or job.status not in {"succeeded", "failed", "rejected", "cancelled"}:
+            store.request_cancel(submission.job.job_id)
+            return error_response("TIMEOUT", "job did not complete in time", 504, retryable=True)
+        result = coordinator.result(job.job_id)
+        if job.status != "succeeded" or result is None:
+            err = job.error or {"code": "INTERNAL_ERROR", "message": "job failed"}
+            return error_response(
+                err["code"],
+                err["message"],
+                ERROR_HTTP_STATUS.get(err["code"], 500),
+                retryable=bool(err.get("retryable")),
+            )
+        items = result["result"]["items"]
+        return JSONResponse(
+            {
+                "object": "list",
+                "model": body.model,
+                "data": [
+                    {
+                        "object": "embedding",
+                        "index": index,
+                        "embedding": item["vector"],
+                    }
+                    for index, item in enumerate(items)
+                ],
+                "usage": {"prompt_tokens": 0, "total_tokens": 0},
+                "hermes_space_id": result["result"]["space_id"],
+                "hermes_provenance": result["provenance"],
+            }
+        )
+
+    @app.post("/v1/rerank")
+    async def openai_rerank(body: OpenAIRerankRequest, p: Principal = Depends(principal)):
+        require_scope(p, "capability:invoke:search")
+        profile = rerank_aliases.get(body.model)
+        if profile is None:
+            raise HTTPException(status_code=404, detail="NOT_FOUND")
+        route = config.route_for("search.rerank", "1.0.0", profile)
+        if route is None or not route.sync_allowed:
+            return error_response(
+                "CAPABILITY_UNAVAILABLE", "no synchronous rerank route", 503
+            )
+        request_data = {
+            "capability": "search.rerank",
+            "capability_version": "1.0.0",
+            "profile": profile,
+            "input": {
+                "query": body.query,
+                "documents": body.documents,
+                "top_n": body.top_n or len(body.documents),
+            },
+            "constraints": {
+                "timeout_ms": route.timeout_ms,
+                "priority": "interactive",
+                "allow_degraded_route": False,
+            },
+            "policy": {
+                "data_classification": "internal",
+                "cloud_fallback_allowed": False,
+                "retention": "none",
+            },
+        }
+        try:
+            submission = coordinator.submit(p.name, request_data, None)
+        except CapabilityUnavailable:
+            return error_response("CAPABILITY_UNAVAILABLE", "no approved route", 503)
+        except InvalidJobInput as exc:
+            return error_response("INVALID_INPUT", str(exc), 400)
+        except QueueFull as exc:
+            return error_response(
+                "QUEUE_FULL",
+                str(exc),
+                429,
+                retryable=True,
+                retry_after_seconds=exc.retry_after_seconds,
+            )
+        job = await asyncio.to_thread(
+            coordinator.wait,
+            submission.job.job_id,
+            route.timeout_ms / 1000 + 1,
+        )
+        if job is None or job.status not in {"succeeded", "failed", "rejected", "cancelled"}:
+            store.request_cancel(submission.job.job_id)
+            return error_response("TIMEOUT", "job did not complete in time", 504, retryable=True)
+        result = coordinator.result(job.job_id)
+        if job.status != "succeeded" or result is None:
+            err = job.error or {"code": "INTERNAL_ERROR", "message": "job failed"}
+            return error_response(
+                err["code"],
+                err["message"],
+                ERROR_HTTP_STATUS.get(err["code"], 500),
+                retryable=bool(err.get("retryable")),
+            )
+        id_to_index = {f"d{index}": index for index in range(len(body.documents))}
+        return JSONResponse(
+            {
+                "model": body.model,
+                "results": [
+                    {
+                        "index": id_to_index.get(item["id"], 0),
+                        "relevance_score": item["score"],
+                    }
+                    for item in result["result"]["candidates"]
+                ],
+                "hermes_provenance": result["provenance"],
+            }
+        )
 
     return app
 

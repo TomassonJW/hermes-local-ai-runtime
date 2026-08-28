@@ -68,3 +68,15 @@ families:
     route: vision.analyze quality gate
     review_required: true
     note: Images under 48px on the short side return unsupported instead of guessing.
+  - id: R-01
+    name: Text embeddings
+    status: approved-synthetic
+    route: text.embed / Qwen3-Embedding-0.6B via llama.cpp
+    review_required: false
+    note: 1024-d L2. space_id text.embed@1.0.0/balanced. FastEmbed not wired.
+  - id: R-02
+    name: Bounded rerank
+    status: approved-synthetic
+    route: search.rerank / Qwen3-Reranker-0.6B via llama.cpp
+    review_required: false
+    note: Max 100 candidates. Invoice family ranked first; English invoice beat French.
