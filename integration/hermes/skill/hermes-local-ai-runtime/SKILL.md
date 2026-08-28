@@ -1,199 +1,189 @@
 ---
 name: hermes-local-ai-runtime
-description: Use the shared local AI runtime from Hermes.
-version: 0.1.0
+description: Use when wiring an app to the local AI runtime.
+version: 0.2.0
 author: Thomas Jankowski, Hermes Agent
 license: Apache-2.0
 platforms: [linux]
 metadata:
   hermes:
-    tags: [local-ai, inference, vision, ocr, embeddings, audio]
+    tags: [local-ai, ocr, vision, embeddings, audio, consumers]
     category: mlops
 ---
 
-# Hermes Local AI Runtime Skill
+# Connect an app to Hermes Local AI Runtime
 
-Use this skill when Hermes must consume or integrate the shared local AI runtime. It selects capabilities, not model files, and preserves application data ownership. It does not install models, change routes, or bypass runtime limits.
+Hand this skill to any session that must call the shared runtime. The app
+speaks HTTP capabilities. It never names a GGUF file, never starts Ollama or
+llama.cpp on its own, and never gives the runtime a database credential.
+
+This skill does not install models, enable systemd, or change Hermes
+`config.yaml`.
 
 ## When to Use
 
-Load this skill when:
+- An application (Sillage or any other) needs OCR, invoice fields, PDF text,
+  vision, embeddings, rerank, or batch transcription from the local runtime.
+- A coding agent must wire a consumer without knowing this repository's
+  internals.
 
-- a Hermes application needs OCR, document parsing, structured extraction, embeddings, reranking, vision, object/image analysis, or transcription;
-- Hermes should use a local auxiliary vision endpoint;
-- a developer asks which local capability is available;
-- an existing consumer must migrate away from a hardcoded model server;
-- a local AI request fails and route, policy, resource, or review state must be diagnosed.
+Do not use it to discuss models in general, to download weights, or to expose
+the runtime on a public address.
 
-Do not load it merely to discuss AI models in general.
+## Reachability
 
-## Prerequisites
+Default control plane (this VM, loopback only):
 
-- the runtime is installed and reachable through its authorised local/private endpoint;
-- the consumer has a scoped credential when required;
-- capability discovery is available;
-- the consumer's data classification and fallback policy are known;
-- any state-changing model or route operation has operator approval.
+```text
+http://127.0.0.1:8830
+```
 
-## How to Run
+1. `GET /healthz` must return `{"status":"ok"}` with no auth.
+2. Apps use `Authorization: Bearer $HERMES_LOCAL_AI_TOKEN`.
+3. The console cookie is for the UI only. Do not use it from Sillage.
 
-1. Discover the runtime before assuming a capability.
-2. Select a capability and profile.
-3. Validate input and data policy.
-4. Submit through the native API or the approved compatibility surface.
-5. Inspect warnings, review state, and provenance.
-6. Let the consumer apply business rules and persist results.
+If `/healthz` fails, stop. Do not spawn a second inference server.
 
-Completion means the consumer uses a stable capability contract, handles explicit failures, and contains no checkpoint/runtime flags.
+Completion: health is ok and the token is read from the environment, never
+written into Git.
 
-## Quick Reference
+## Discover first
 
-| Need | Capability |
-| --- | --- |
-| answer an image question | `vision.analyze@1` |
-| structured fields from image | `vision.extract_structured@1` |
-| native PDF text | `document.text_extract@1` |
-| OCR | `document.ocr@1` |
-| layout/tables | `document.parse@1` |
-| structured document fields | `document.extract_structured@1` |
-| text JSON extraction | `text.extract_structured@1` |
-| semantic vectors | `text.embed@1` |
-| reorder candidates | `search.rerank@1` |
-| transcribe audio | `audio.transcribe@1` |
+```text
+GET /api/v1/capabilities
+```
 
-Profiles:
+Treat the live list as truth. If a capability is missing, fail explicitly.
 
-- `fast`: smallest approved route;
-- `balanced`: default;
-- `accurate`: strongest approved local route.
+Completion: you have the JSON list and you picked an `id` whose `status` is
+`available` and whose `profiles` include the profile you will send.
 
-`accurate` never implies cloud.
+## Capabilities that exist on this deployment
 
-## Procedure
+| Need | Capability | Default profile | Input |
+| --- | --- | --- | --- |
+| Native PDF text | `document.text_extract` | `balanced` | `upload_id` |
+| OCR an image/PDF scan | `document.ocr` | `balanced` | `upload_id` |
+| Invoice-like fields | `document.extract_structured` | `balanced` | `upload_id` |
+| Layout/parse | `document.parse` | `balanced` | `upload_id` |
+| Question about an image | `vision.analyze` | `balanced` | `upload_id` + `question` |
+| Coloured-box objects | `vision.detect_objects` | `balanced` | `upload_id` |
+| Compare two images | `vision.compare` | `fast` | `upload_id` + `upload_id_b` |
+| Embed texts | `text.embed` | `balanced` | `texts` or `items` |
+| Reorder a short list | `search.rerank` | `balanced` | `query` + `candidates` or `documents` |
+| Transcribe a file | `audio.transcribe` | `balanced` | `upload_id` |
+| Short local text | `text.generate` | `balanced` | `prompt` |
 
-### 1. Discover
+`text.generate` / `fast` is a dummy echo. Do not use it for product copy.
 
-Call the runtime's system and capability discovery endpoints or its configured MCP tools.
+Not available here: `vision.extract_structured`, streaming ASR, a shared
+vector database, cloud fallback.
 
-Verify:
+Timeouts: OCR ~60s, embed/rerank/text ~120s, vision/audio ~180s. The sample
+client default of 20s is too short for those jobs.
 
-- capability/version exists;
-- route is currently available;
-- media and size limits;
-- sync versus async;
-- data-class maximum;
-- profile support.
+## Policy (required on every job)
 
-If unavailable, report the exact state. Do not launch a separate unmanaged model server.
+```json
+{
+  "data_classification": "internal",
+  "cloud_fallback_allowed": false,
+  "retention": "none"
+}
+```
 
-### 2. Choose the surface
+Do not set cloud fallback true.
 
-Use the native capability API for documents, jobs, evidence, and specialised operations.
+## Call pattern
 
-Use the OpenAI-compatible endpoint when Hermes model/auxiliary configuration requires it.
+Reuse `consumers/client.py` when the consumer is Python. Otherwise:
 
-Use MCP/tools for explicit specialised actions exposed as tools.
+1. Files: `POST /api/v1/uploads` with the raw bytes and the real
+   `Content-Type` (`application/pdf`, `image/png`, `audio/wav`, …). Read
+   `upload_id`.
+2. `POST /api/v1/jobs` with:
 
-### 3. Preserve the data boundary
+```json
+{
+  "capability": "document.extract_structured",
+  "capability_version": "1.0.0",
+  "profile": "balanced",
+  "input": { "upload_id": "upl_…" },
+  "policy": {
+    "data_classification": "internal",
+    "cloud_fallback_allowed": false,
+    "retention": "none"
+  }
+}
+```
 
-The consumer:
+3. Poll `GET /api/v1/jobs/{job_id}` until `succeeded`, `failed`,
+   `cancelled`, or `rejected`.
+4. On success, `GET /api/v1/jobs/{job_id}/result`.
+5. The consumer validates, then writes to **its** database.
 
-- retrieves database candidates;
-- submits only the bounded data required;
-- receives scores/results;
-- validates and writes.
+Text jobs skip upload. Embed:
 
-Never give the runtime general database credentials or ask it to mutate business data.
+```json
+{ "texts": ["facture 12", "avoir 12"] }
+```
 
-### 4. Submit policy
+Rerank (bounded list from the consumer, never the whole DB):
 
-Set:
+```json
+{
+  "query": "facture ACME 123,45 EUR",
+  "candidates": [
+    { "id": "exp-1", "text": "ACME 123.45" },
+    { "id": "exp-2", "text": "other 10.00" }
+  ],
+  "top_n": 5
+}
+```
 
-- data classification;
-- profile;
-- timeout;
-- retention;
-- cloud fallback, normally false;
-- human review requirements.
+Store returned vectors and `space_id` in the consumer. If `space_id` changes,
+re-embed. Do not ask the runtime to keep a vector index.
 
-Do not pass arbitrary engine flags. Operator-only model override is for benchmarks and debugging.
+Completion: one real job reached a terminal status and the consumer persisted
+or displayed the result without sending DB secrets.
 
-### 5. Handle outcomes
+## Data boundary
 
-Treat these as normal:
+The runtime computes. The app owns writes, matching rules, and user
+confirmation.
 
-- queued;
-- resource rejected;
-- unsupported media;
-- low confidence;
-- review required;
-- output schema failure;
-- cancelled;
-- capability unavailable.
+Never:
 
-Do not hide them with recursive retries.
+- send a connection string, token vault, or customer dump;
+- log request payloads;
+- hardcode a model filename or llama.cpp flag;
+- retry a resource rejection in a tight loop;
+- treat model confidence as a business decision.
 
-### 6. Verify result
+## Reference in this clone
 
-Inspect:
+- Contract: `contracts/openapi.yaml`
+- Python client: `consumers/client.py`
+- Invoice example: `consumers/sillage_app.py`
 
-- schema or expected result type;
-- evidence and warnings;
-- `review_required`;
-- capability/route/model/preset provenance;
-- transformations;
-- cache and timing.
+Pass `timeout_s=180` for vision/audio when using `RuntimeClient.invoke`.
 
-The model's own confidence is not sufficient evidence.
+## Common Pitfalls
 
-### 7. Integrate tests
+1. Using the Hub URL from a backend. Apps on this VM call `127.0.0.1:8830`.
+2. Using the UI cookie instead of a Bearer token.
+3. Assuming `fast` text generation is a real model.
+4. Sending the whole Sillage ledger to `search.rerank`.
+5. Storing embeddings in the runtime.
+6. Hiding `rejected` / `CAPABILITY_UNAVAILABLE` behind a cloud call.
 
-A consumer integration includes:
+## Verification Checklist
 
-- synthetic success;
-- invalid input;
-- unavailable capability;
-- resource rejection;
-- review-required result;
-- timeout/cancellation where asynchronous;
-- no model-specific configuration in consumer code.
-
-## Vision Rules
-
-A small local VLM is useful but not universally equivalent to frontier vision.
-
-Prefer:
-
-1. native/deterministic extraction;
-2. OCR or specialised detector/embedding;
-3. local VLM;
-4. human review or explicitly authorised fallback.
-
-For Hermes auxiliary vision with a text-only main model, ask the actual visual question. A generic caption loses task information because the main model does not see the pixels.
-
-## Reranking
-
-Embeddings retrieve a broad candidate set quickly. Reranking reads the query with each top candidate and returns a more precise order. Send a bounded candidate list; do not send the whole database.
-
-## Pitfalls
-
-- hardcoding a model filename in an application;
-- treating `accurate` as permission for cloud;
-- using a VLM for exact coordinates when a detector exists;
-- using model self-confidence as a business threshold;
-- starting a second llama.cpp/Ollama instance outside runtime admission;
-- storing embeddings in the runtime instead of the consumer;
-- logging confidential payloads;
-- retrying a resource refusal until the server is overloaded.
-
-## Verification
-
-The use is correct when:
-
-- capability discovery preceded invocation;
-- the consumer owns persistence and decisions;
-- explicit policy accompanied the request;
-- failures and review state are handled;
-- provenance is retained as needed;
-- no model/engine details leaked into the consumer contract;
-- no unauthorised external request occurred.
+- [ ] `GET /healthz` is ok
+- [ ] `GET /api/v1/capabilities` lists the capability you need
+- [ ] No model filename in the consumer
+- [ ] Policy has `cloud_fallback_allowed: false`
+- [ ] Files go through `/api/v1/uploads`
+- [ ] Timeouts match the job class
+- [ ] Results are persisted only in the consumer
+- [ ] Failures surface to the user; no silent retry storm

@@ -1,6 +1,8 @@
 # Hermes integration
 
-This directory contains the future Hermes adapter, not an instruction to alter the live Hermes installation during bootstrap.
+Operational consumer skill: `skill/hermes-local-ai-runtime/SKILL.md`.
+Give that file to any app session (Sillage or other). It is HTTP wiring,
+not a live install into Hermes `config.yaml`.
 
 ## Intended surfaces
 
