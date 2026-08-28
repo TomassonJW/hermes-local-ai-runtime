@@ -20,11 +20,13 @@ and Phase 3 lot is now complete through G-05:
   disposable workspace.
 - G-05 API/job core: `runtime/`, `config/g05-runtime.example.yaml`, updated
   OpenAPI/error contracts and `operations/G05-API-JOB-CORE-2026-08-28.md`.
-  Forty-three tests pass. Final loopback smoke against the real llama.cpp route
+  Forty-six tests pass. Final loopback smoke against the real llama.cpp route
   produced schema-valid structured JSON in 1,900 ms, cancelled a running real
   job in 24 ms and returned a valid OpenAI chat response. Hostile-review
   regressions now cover request/result byte ceilings, unique consumer identity,
-  canonical request compatibility, atomic cancellation and worker teardown.
+  canonical request compatibility, atomic cancellation, worker teardown,
+  proxy-environment isolation, non-blocking OpenAI waits and cross-instance
+  idempotency.
 - G-05 implementation commit `952614e` is pushed on `main`; GitHub Actions
   `validate-bootstrap` run `33130282636` passed.
 

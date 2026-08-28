@@ -190,6 +190,7 @@ class JobStore:
         with self._lock:
             con = self._connect()
             try:
+                con.execute("BEGIN IMMEDIATE")
                 if idempotency_key:
                     cur = con.execute(
                         "SELECT * FROM jobs WHERE consumer=? AND idempotency_key=?",
@@ -199,27 +200,35 @@ class JobStore:
                     if existing is not None:
                         if existing["request_hash"] != request_hash:
                             raise IdempotencyConflict(idempotency_key)
-                        return self._row_to_job(existing), False
-                with con:
-                    con.execute(
-                        "INSERT INTO jobs(job_id, consumer, capability, capability_version,"
-                        " profile, route_id, status, idempotency_key, request_hash,"
-                        " created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                        (
-                            job_id,
-                            consumer,
-                            request["capability"],
-                            request["capability_version"],
-                            request["profile"],
-                            route_id,
-                            status,
-                            idempotency_key,
-                            request_hash,
-                            now,
-                            now,
-                        ),
-                    )
-                return self.get(job_id), True  # type: ignore[return-value]
+                        result = self._row_to_job(existing)
+                        con.commit()
+                        return result, False
+                con.execute(
+                    "INSERT INTO jobs(job_id, consumer, capability, capability_version,"
+                    " profile, route_id, status, idempotency_key, request_hash,"
+                    " created_at, updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        job_id,
+                        consumer,
+                        request["capability"],
+                        request["capability_version"],
+                        request["profile"],
+                        route_id,
+                        status,
+                        idempotency_key,
+                        request_hash,
+                        now,
+                        now,
+                    ),
+                )
+                inserted = con.execute(
+                    "SELECT * FROM jobs WHERE job_id=?", (job_id,)
+                ).fetchone()
+                con.commit()
+                return self._row_to_job(inserted), True
+            except BaseException:
+                con.rollback()
+                raise
             finally:
                 con.close()
 

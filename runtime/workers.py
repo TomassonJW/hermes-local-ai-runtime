@@ -62,6 +62,7 @@ class OpenAIUpstreamWorker:
         return httpx.Client(
             base_url=route.upstream_base,
             timeout=route.timeout_ms / 1000 + self._timeout_extra,
+            trust_env=False,
         )
 
     def execute(self, route: RouteConfig, request: dict) -> dict:

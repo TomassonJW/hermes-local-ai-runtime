@@ -54,7 +54,7 @@ implemented. Errors use the stable catalogue names and include a request ID.
 
 Command: `pytest`
 
-Result: **42 passed**.
+Result: **46 passed**.
 
 Covered behaviours:
 
@@ -75,6 +75,8 @@ Covered behaviours:
 - canonical `policy` requirement and strict OpenAI alias/field rejection;
 - full canonical request-policy/version compatibility at schema boundaries;
 - duplicate principal-name and duplicate token-value refusal;
+- inherited HTTP proxy variables cannot intercept loopback upstream calls;
+- idempotency remains atomic across concurrent SQLite store instances;
 - pre-validation native request byte ceiling and coordinator byte ceiling;
 - one-megabyte child result drained without pipe deadlock;
 - upstream response, single result and aggregate result-store byte ceilings;
@@ -82,6 +84,7 @@ Covered behaviours:
 - cancellation wins atomically against success, failure and timeout publication;
 - shutdown terminates and joins active workers with no surviving child;
 - synchronous OpenAI timeout maps to HTTP 504;
+- synchronous OpenAI waits do not block health traffic on the event loop;
 - native per-job timeout is enforced when stricter than the route timeout;
 - validation errors do not echo input;
 - OpenAI chat adapter through the same job core;

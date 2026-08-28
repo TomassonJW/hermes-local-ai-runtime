@@ -7,6 +7,7 @@ content is never logged by this module.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import hmac
 import json
@@ -511,8 +512,10 @@ def create_app(config: RuntimeConfig, *, max_upload_bytes: int = 20 * 1024 * 102
                 retryable=True,
                 retry_after_seconds=exc.retry_after_seconds,
             )
-        job = coordinator.wait(
-            submission.job.job_id, timeout_s=route.timeout_ms / 1000 + 1
+        job = await asyncio.to_thread(
+            coordinator.wait,
+            submission.job.job_id,
+            route.timeout_ms / 1000 + 1,
         )
         if job is None or job.status not in {"succeeded", "failed", "rejected", "cancelled"}:
             store.request_cancel(submission.job.job_id)

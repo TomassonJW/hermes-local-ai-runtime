@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import multiprocessing
 import sqlite3
@@ -270,7 +271,6 @@ def test_idempotency_replays_same_job_and_rejects_payload_change(tmp_path: Path)
         assert replay.json()["job_id"] == first.json()["job_id"]
         assert conflict.status_code == 409
         assert conflict.json()["error"]["code"] == "IDEMPOTENCY_CONFLICT"
-
         short = client.post(
             "/api/v1/jobs",
             headers={**auth(), "Idempotency-Key": "short"},
@@ -278,6 +278,42 @@ def test_idempotency_replays_same_job_and_rejects_payload_change(tmp_path: Path)
         )
         assert short.status_code == 400
 
+
+def test_idempotency_is_atomic_across_store_instances(tmp_path: Path):
+    db_path = tmp_path / "jobs.db"
+    stores = [JobStore(db_path) for _ in range(8)]
+    barrier = threading.Barrier(len(stores))
+    results: list[tuple[str, bool]] = []
+    errors: list[BaseException] = []
+    result_lock = threading.Lock()
+    request = {
+        "capability": "text.generate",
+        "capability_version": "1.0.0",
+        "profile": "balanced",
+    }
+
+    def create(store: JobStore) -> None:
+        barrier.wait()
+        try:
+            row, created = store.create(
+                "consumer-a", request, "echo-text@1", "shared-key", "same-hash"
+            )
+            with result_lock:
+                results.append((row.job_id, created))
+        except BaseException as exc:
+            with result_lock:
+                errors.append(exc)
+
+    threads = [threading.Thread(target=create, args=(store,)) for store in stores]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=3)
+
+    assert errors == []
+    assert len(results) == len(stores)
+    assert sum(created for _, created in results) == 1
+    assert len({job_id for job_id, _ in results}) == 1
 
 def test_consumer_cannot_read_another_consumers_job(tmp_path: Path):
     with TestClient(create_app(config(tmp_path))) as client:
@@ -594,6 +630,52 @@ def test_upstream_response_is_stopped_before_json_decode_at_byte_limit(
     assert raised.value.code == "OUTPUT_TOO_LARGE"
 
 
+def test_loopback_upstream_ignores_environment_http_proxy(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    proxy_hits = 0
+
+    class RecordingProxy(BaseHTTPRequestHandler):
+        def do_POST(self):
+            nonlocal proxy_hits
+            proxy_hits += 1
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"choices":[{"message":{"content":"intercepted"}}]}')
+
+        def log_message(self, _format, *args):
+            pass
+
+    proxy = ThreadingHTTPServer(("127.0.0.1", 0), RecordingProxy)
+    proxy_thread = threading.Thread(target=proxy.serve_forever, daemon=True)
+    proxy_thread.start()
+    try:
+        for name in ("NO_PROXY", "no_proxy", "HTTPS_PROXY", "https_proxy", "http_proxy"):
+            monkeypatch.delenv(name, raising=False)
+        monkeypatch.setenv("HTTP_PROXY", f"http://127.0.0.1:{proxy.server_port}")
+        route = RouteConfig(
+            **{
+                **config(tmp_path).routes[0].__dict__,
+                "worker": "openai-upstream",
+                "upstream_base": "http://127.0.0.1:1",
+                "upstream_model": "synthetic",
+            }
+        )
+
+        with pytest.raises(WorkerError) as exc:
+            OpenAIUpstreamWorker(timeout_extra_s=0).execute(
+                route, {"input": {"prompt": "private payload"}}
+            )
+
+        assert exc.value.code == "MODEL_LOAD_FAILED"
+        assert proxy_hits == 0
+    finally:
+        proxy.shutdown()
+        proxy.server_close()
+        proxy_thread.join(timeout=1)
+
+
 def test_volatile_result_store_evicts_oldest_entry_at_bound(tmp_path: Path):
     with TestClient(create_app(config(tmp_path, result_max_count=2))) as client:
         job_ids = []
@@ -793,6 +875,64 @@ def test_openai_timeout_returns_504_and_leaves_no_worker_child(tmp_path: Path):
             for child in multiprocessing.active_children()
             if child.name.startswith("worker-job_") and child.is_alive()
         ]
+    finally:
+        server.shutdown()
+        server.server_close()
+        server_thread.join(timeout=1)
+
+
+def test_openai_wait_does_not_block_health_on_the_event_loop(tmp_path: Path):
+    class SlowUpstream(BaseHTTPRequestHandler):
+        def do_POST(self):
+            time.sleep(0.4)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(b'{"choices":[{"message":{"content":"done"}}]}')
+
+        def log_message(self, _format, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), SlowUpstream)
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    try:
+        base = config(tmp_path)
+        route = RouteConfig(
+            **{
+                **base.routes[0].__dict__,
+                "worker": "openai-upstream",
+                "upstream_base": f"http://127.0.0.1:{server.server_port}",
+                "upstream_model": "synthetic",
+                "timeout_ms": 1000,
+            }
+        )
+        app = create_app(RuntimeConfig(**{**base.__dict__, "routes": (route,)}))
+
+        async def exercise() -> None:
+            transport = httpx.ASGITransport(app=app)
+            async with app.router.lifespan_context(app):
+                async with httpx.AsyncClient(
+                    transport=transport, base_url="http://runtime.test"
+                ) as client:
+                    started = time.monotonic()
+                    chat = asyncio.create_task(
+                        client.post(
+                            "/v1/chat/completions",
+                            headers=auth(),
+                            json={
+                                "model": "local-balanced",
+                                "messages": [{"role": "user", "content": "bonjour"}],
+                            },
+                        )
+                    )
+                    await asyncio.sleep(0.05)
+                    health = await client.get("/healthz")
+                    assert time.monotonic() - started < 0.25
+                    assert health.status_code == 200
+                    assert (await chat).status_code == 200
+
+        asyncio.run(exercise())
     finally:
         server.shutdown()
         server.server_close()
