@@ -123,6 +123,13 @@ Observed final smoke:
 After the smoke, both processes were stopped. Ports 8840 and 8850 were closed
 and no job worker process remained.
 
+## Git and CI closure
+
+- Implementation commit: `952614e` on `main`, pushed to `origin/main`.
+- GitHub Actions workflow: `validate-bootstrap`, run `33130282636`.
+- Result: **PASS** in 19 seconds; bootstrap validation and the 42-test suite
+  both passed on Python 3.11.
+
 ## Explicit limits
 
 - No permanent runtime service or package installation was created.

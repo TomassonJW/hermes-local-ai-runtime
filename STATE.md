@@ -1,6 +1,6 @@
 # State
 
-Last updated: 2026-08-28 (G-05 closure candidate)
+Last updated: 2026-08-28 (G-05 closed)
 
 ## Phase
 
@@ -19,6 +19,8 @@ job core are validated on loopback. No permanent runtime deployment exists.
   and `benchmarks/results/G03-ENGINE-SPIKE-2026-08-28.md`.
 - G-05 control-plane source and evidence: `runtime/` and
   `operations/G05-API-JOB-CORE-2026-08-28.md`.
+- G-05 implementation commit: `952614e`; GitHub Actions
+  `validate-bootstrap` run `33130282636`: **passed**.
 - Permanent installation/runtime service, Hermes configuration changes and
   production consumers: none. Spike artefacts and model weights remain outside Git.
 - Current authority: this repository.

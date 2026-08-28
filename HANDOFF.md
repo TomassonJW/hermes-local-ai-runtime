@@ -25,6 +25,8 @@ and Phase 3 lot is now complete through G-05:
   job in 24 ms and returned a valid OpenAI chat response. Hostile-review
   regressions now cover request/result byte ceilings, unique consumer identity,
   canonical request compatibility, atomic cancellation and worker teardown.
+- G-05 implementation commit `952614e` is pushed on `main`; GitHub Actions
+  `validate-bootstrap` run `33130282636` passed.
 
 No inference service is permanently installed or active. No backend listener,
 Hermes configuration change, live-UI wiring or production consumer integration
