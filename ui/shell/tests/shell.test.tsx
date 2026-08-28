@@ -45,6 +45,12 @@ describe('UI-01 disconnected', () => {
     expect(within(nav).getByText('Essayer')).toBeInTheDocument()
     expect(NAV[0].path).toBe('/')
   })
+
+  it('offers a Hub home button on the right of the top bar', () => {
+    renderAt('/')
+    const home = screen.getByRole('link', { name: /retour au hub/i })
+    expect(home).toHaveAttribute('href', '/')
+  })
 })
 
 describe('UI-01 live try', () => {
